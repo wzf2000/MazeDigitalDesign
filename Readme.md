@@ -43,7 +43,7 @@
 
   设想的状态：
 
-  ![未命名文件](/Users/zwd/Downloads/未命名文件.jpg)
+  ![未命名文件](resource/未命名文件.jpg)
 
 ### 三、变量初步设计
 
