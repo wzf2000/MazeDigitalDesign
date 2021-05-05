@@ -130,6 +130,78 @@ assign video_red = vdata < 200 ? hdata[8:1] : 0;
 assign video_green = vdata >= 200 && vdata < 400 ? hdata[8:1] : 0;
 assign video_blue = vdata >= 400 ? hdata[8:1] : 0;
 
+// define maze param
+// 01000
+// 01010
+// 01010
+// 01010
+// 00010
+localparam maze[24:0] = 25'b0100001010010100101000010;
+localparam hor_wall[29:0] = 30'b111001111111111111111111100111;
+localparam ver_wall[29:0] = 30'b100001000011100001110000100001;
+reg pos[1:0][2:0] = {1'b0, 1'b0};
+
+//define camera param
+localparam lights[3:0][31:0] = {};
+localparam center[1:0][] = ;
+localparam width[] = ;
+localparam height[] = ;
+localparam angle[] = ;
+reg direction[1:0][7:0] = {1'b0, 1'b0}; // y_angle, z_angle
+
+//define movement signal
+reg rotate = 1'b0;
+reg move = 1'b0;
+
+// define state
+reg state[3:0] = 4'b0000;
+localparam STILL = 4'b0001;
+localparam MOVE = 4'b0010;
+localparam ROTATE = 4'b0011;
+
+reg draw_state[3:0] = 4'b0000;
+localparam STOP = 4'b0000;
+localparam INIT_CAM = 4'b0001;
+localparam GEN_RAY = 4'b0010;
+localparam INTERSECT = 4'b0011;
+localparam PHONG = 4'b0100;
+localparam SET_PIXEL = 4'b0101;
+localparam STATE_EXP = 4'b1111;
+
+
+// main states
+always @ (posedge clk or posedge rst)
+begin
+    case (state)
+        STILL: begin
+            if (move == 1'b1 && rotate == 1'b0) begin
+                state <= MOVE;
+            end
+            else if (move == 1'b0 && rotate == 1'b1) begin
+                state <= ROTATE;
+            end
+            else if (move == 1'b1 && rotate == 1'b1) begin
+                state <= state;
+                // ??
+            end
+            else begin // both 0
+                state <= state;
+            end
+        end 
+        MOVE: begin
+            // 有没有可能无需generate ray
+            
+        end
+        ROTATE: begin
+            // 无需每步set cam
+        end
+        default: begin
+            
+        end
+    endcase
+    endcase
+end
+
 assign video_clk = clk_vga;
 vga #(12, 800, 856, 976, 1040, 600, 637, 643, 666, 1, 1) vga800x600at75 (
     .clk(clk_vga), 
