@@ -136,16 +136,16 @@ assign video_blue = vdata >= 400 ? hdata[8:1] : 0;
 // 01010
 // 01010
 // 00010
-localparam maze[24:0] = 25'b0100001010010100101000010;
-localparam hor_wall[29:0] = 30'b111001111111111111111111100111;
-localparam ver_wall[29:0] = 30'b100001000011100001110000100001;
+localparam maze = 25'b0100001010010100101000010;
+localparam hor_wall = 30'b111001111111111111111111100111;
+localparam ver_wall = 30'b100001000011100001110000100001;
 reg pos[1:0][2:0] = {1'b0, 1'b0};
 
 //define camera param
 localparam lights[3:0][31:0] = {};
 localparam center[1:0][] = ;
-localparam width[] = ;
-localparam height[] = ;
+localparam width = 10'd800;
+localparam height = 10'd600;
 localparam angle[] = ;
 reg direction[1:0][7:0] = {1'b0, 1'b0}; // y_angle, z_angle
 
@@ -162,11 +162,14 @@ localparam ROTATE = 2'b11;
 
 
 // define pipeline
-reg pip_en[3:0]; // 使能 拉低有效
 localparam GEN_RAY = 4'b0010;
 localparam INTERSECT = 4'b0011;
 localparam PHONG = 4'b0100;
 localparam SET_PIXEL = 4'b0101;
+
+reg pip_en[3:0]; // 使能 拉低有效
+reg px[3:0][9:0]; // 像素点x
+reg py[3:0][9:0]; // 像素点y
 
 // main states
 always @ (posedge clk_in or posedge rst)
@@ -187,63 +190,85 @@ begin
         end
         DRAW: begin
             // 流水线
+            px[1] <= px[0];
+            px[2] <= px[1];
+            px[3] <= px[2];
+
+            py[1] <= py[0];
+            py[2] <= py[1];
+            py[3] <= py[2];
+
+            pip_en[1] <= pip_en[0];
+            pip_en[2] <= pip_en[1];
+            pip_en[3] <= pip_en[2];
 
             // GEN_RAY
-            if (pip_en[GEN_RAY] == 1'b1) begin
-                
+            if (pip_en[0] == 1'b1) begin // 激活
+                if (px[0] == width) begin
+                    pip_en[0] <= 1'b1;
+                    px[0] <= px[0];
+                    py[0] <= py[0];
+                end
+                else begin
+                    pip_en[0] <= 1'b0;
+                    px[0] <= 10'd0;
+                    py[0] <= 10'd0;
+                end
             end
             else begin
-                
+                if (px[0] == width - 1 && py[0] == height - 1) begin
+                    pip_en[0] = 1'b1;
+                    px[0] <= width;
+                    py[0] <= height;
+                end
+                else if (px[0] == width - 1) begin
+                    pip_en[0] <= 1'b0;
+                    px[0] <= 10'd0;
+                    py[0] <= py[0] + 1;
+                end
+                else begin
+                    pip_en[0] <= 1'b0;
+                    px[0] <= px[0] + 1;
+                    py[0] <= py[0];
+                end
             end
 
             // INTERSECT
-            if (pip_en[INTERSECT] == 1'b0 && pip_en[GEN_RAY] == 1'b0) begin
-                
-            end
-            else if (pip_en[INTERSECT] == 1'b0 && pip_en[GEN_RAY] == 1'b1) begin
-                
-            end
-            else if (pip_en[INTERSECT] == 1'b1 && pip_en[GEN_RAY] == 1'b0) begin
-                
+            if (pip_en[0] == 1'b0) begin
+                // do intersect
             end
             else begin
-                
+                // stay
             end
 
             // PHONG
-            if (pip_en[PHONG] == 1'b0 && pip_en[INTERSECT] == 1'b0) begin
-                
-            end
-            else if (pip_en[PHONG] == 1'b0 && pip_en[INTERSECT] == 1'b1) begin
-                
-            end
-            else if (pip_en[PHONG] == 1'b1 && pip_en[INTERSECT] == 1'b0) begin
-                
+            if (pip_en[1] == 1'b0) begin
+                // do phong
             end
             else begin
-                
+                // stay
             end
 
             // SET_PIXEL
-            if (pip_en[SET_PIXEL] == 1'b0 && pip_en[PHONG] == 1'b0) begin
-                
-            end
-            else if (pip_en[SET_PIXEL] == 1'b0 && pip_en[PHONG] == 1'b1) begin
-                
-            end
-            else if (pip_en[SET_PIXEL] == 1'b1 && pip_en[PHONG] == 1'b0) begin
-                
+            if (pip_en[2] == 1'b0) begin
+                // do set_pixel
             end
             else begin
-                
+                // stay
             end
-            // localparam GEN_RAY = 4'b0010;
-            // localparam INTERSECT = 4'b0011;
-            // localparam PHONG = 4'b0100;
-            // localparam SET_PIXEL = 4'b0101;
+
+            // back to init_cam
+            if (pip_en[3] == 1'b0) begin
+                state <= DRAW;
+            end
+            else if (px[3] == width) begin
+                state <= INIT_CAM;
+            end
+            else begin
+                state <= DRAW;
+            end
         end
         default: begin
-            
         end
     endcase
 end
