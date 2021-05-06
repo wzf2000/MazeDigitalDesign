@@ -149,56 +149,102 @@ localparam height[] = ;
 localparam angle[] = ;
 reg direction[1:0][7:0] = {1'b0, 1'b0}; // y_angle, z_angle
 
-//define movement signal
-reg rotate = 1'b0;
-reg move = 1'b0;
-
 // define state
 reg state[3:0] = 4'b0000;
 localparam STILL = 4'b0001;
-localparam MOVE = 4'b0010;
-localparam ROTATE = 4'b0011;
+localparam INIT_CAM = 4'b0010;
+localparam DRAW = 4'b0011;
 
-reg draw_state[3:0] = 4'b0000;
-localparam STOP = 4'b0000;
-localparam INIT_CAM = 4'b0001;
+// define movement signal
+reg draw_mode[1:0] = 2'b00; // 10 move 11 rotate
+localparam MOVE = 2'b10;
+localparam ROTATE = 2'b11;
+
+
+// define pipeline
+reg pip_en[3:0]; // 使能 拉低有效
 localparam GEN_RAY = 4'b0010;
 localparam INTERSECT = 4'b0011;
 localparam PHONG = 4'b0100;
 localparam SET_PIXEL = 4'b0101;
-localparam STATE_EXP = 4'b1111;
-
 
 // main states
-always @ (posedge clk or posedge rst)
+always @ (posedge clk_in or posedge rst)
 begin
     case (state)
         STILL: begin
-            if (move == 1'b1 && rotate == 1'b0) begin
-                state <= MOVE;
+            if (draw_mode == MOVE || draw_mode == ROTATE) begin
+                state <= INIT_CAM;
             end
-            else if (move == 1'b0 && rotate == 1'b1) begin
-                state <= ROTATE;
-            end
-            else if (move == 1'b1 && rotate == 1'b1) begin
-                state <= state;
-                // ??
-            end
-            else begin // both 0
+            else begin // stay still
                 state <= state;
             end
         end 
-        MOVE: begin
-            // 有没有可能无需generate ray
+        INIT_CAM: begin
+            //INIT_CAM
             
+            state <= DRAW;
         end
-        ROTATE: begin
-            // 无需每步set cam
+        DRAW: begin
+            // 流水线
+
+            // GEN_RAY
+            if (pip_en[GEN_RAY] == 1'b1) begin
+                
+            end
+            else begin
+                
+            end
+
+            // INTERSECT
+            if (pip_en[INTERSECT] == 1'b0 && pip_en[GEN_RAY] == 1'b0) begin
+                
+            end
+            else if (pip_en[INTERSECT] == 1'b0 && pip_en[GEN_RAY] == 1'b1) begin
+                
+            end
+            else if (pip_en[INTERSECT] == 1'b1 && pip_en[GEN_RAY] == 1'b0) begin
+                
+            end
+            else begin
+                
+            end
+
+            // PHONG
+            if (pip_en[PHONG] == 1'b0 && pip_en[INTERSECT] == 1'b0) begin
+                
+            end
+            else if (pip_en[PHONG] == 1'b0 && pip_en[INTERSECT] == 1'b1) begin
+                
+            end
+            else if (pip_en[PHONG] == 1'b1 && pip_en[INTERSECT] == 1'b0) begin
+                
+            end
+            else begin
+                
+            end
+
+            // SET_PIXEL
+            if (pip_en[SET_PIXEL] == 1'b0 && pip_en[PHONG] == 1'b0) begin
+                
+            end
+            else if (pip_en[SET_PIXEL] == 1'b0 && pip_en[PHONG] == 1'b1) begin
+                
+            end
+            else if (pip_en[SET_PIXEL] == 1'b1 && pip_en[PHONG] == 1'b0) begin
+                
+            end
+            else begin
+                
+            end
+            // localparam GEN_RAY = 4'b0010;
+            // localparam INTERSECT = 4'b0011;
+            // localparam PHONG = 4'b0100;
+            // localparam SET_PIXEL = 4'b0101;
         end
         default: begin
             
         end
-    endcase
     endcase
 end
 
