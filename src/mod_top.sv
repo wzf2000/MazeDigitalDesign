@@ -51,18 +51,18 @@ module mod_top (
     // input  wire        sd_cd,       // 卡插入检测，0 表示有卡插入
     // input  wire        sd_wp,       // 写保护检测，0 表示写保护状态
 
-    // // SDRAM 内存，信号具体含义请参考数据手册
-    // output wire [12:0] sdram_addr,
-    // output wire [1: 0] sdram_bank,
-    // output wire        sdram_cas_n,
-    // output wire        sdram_ce_n,
-    // output wire        sdram_cke,
-    // output wire        sdram_clk,
-    // output wire [15:0] sdram_dq,
-    // output wire        sdram_dqmh,
-    // output wire        sdram_dqml,
-    // output wire        sdram_ras_n,
-    // output wire        sdram_we_n,
+    // SDRAM 内存，信号具体含义请参考数据手册
+    output wire [12:0] sdram_addr,
+    output wire [1: 0] sdram_bank,
+    output wire        sdram_cas_n,
+    output wire        sdram_ce_n,
+    output wire        sdram_cke,
+    output wire        sdram_clk,
+    output wire [15:0] sdram_dq,
+    output wire        sdram_dqmh,
+    output wire        sdram_dqml,
+    output wire        sdram_ras_n,
+    output wire        sdram_we_n,
 
     // // GMII 以太网接口、MDIO 接口，信号具体含义请参考数据手册
     // output wire        eth_gtx_clk,
@@ -139,7 +139,7 @@ assign video_blue = vdata >= 400 ? hdata[8:1] : 0;
 localparam maze = 25'b0100001010010100101000010;
 localparam hor_wall = 30'b111001111111111111111111100111;
 localparam ver_wall = 30'b100001000011100001110000100001;
-reg pos[1:0][2:0] = {1'b0, 1'b0};
+reg [2:0] pos[1:0] = {1'b0, 1'b0};
 
 //define camera param
 localparam lights[3:0][31:0] = {};
@@ -152,25 +152,25 @@ localparam angle = 10'd28;
 // localparam angle_sin = 20'd512;
 // localparam angle_cos = 20'd887;
 // localparam angle_tan = 20'd591;
-reg[2:0] x;
-reg[2:0] y;
+reg [2:0] x;
+reg [2:0] y;
 reg _dx;
 reg _dy;
-reg[19:0] dx;
-reg[19:0] dy;
+reg [19:0] dx;
+reg [19:0] dy;
 reg _hx;
 reg _hy;
-reg[19:0] hx;
-reg[19:0] hy;
+reg [19:0] hx;
+reg [19:0] hy;
 
 // define state
-reg state[3:0] = 4'b0000;
+reg [3:0] state = 4'b0000;
 localparam STILL = 4'b0001;
 localparam INIT_CAM = 4'b0010;
 localparam DRAW = 4'b0011;
 
 // define movement signal
-reg draw_mode[1:0] = 2'b00; // 10 move 11 rotate
+reg [1:0] draw_mode = 2'b00; // 10 move 11 rotate
 localparam MOVE = 2'b10;
 localparam ROTATE = 2'b11;
 
@@ -181,9 +181,82 @@ localparam INTERSECT = 4'b0011;
 localparam PHONG = 4'b0100;
 localparam SET_PIXEL = 4'b0101;
 
-reg pip_en[3:0]; // 使能 拉低有效
-reg px[3:0][9:0]; // 像素点x
-reg py[3:0][9:0]; // 像素点y
+reg [3:0] pip_en; // 使能 拉低有效
+reg [9:0] px[3:0]; // 像素点x
+reg [9:0] py[3:0]; // 像素点y
+
+//sdram params&var 
+//input assign with reg
+wire [23:0] sdram_wr_addr;
+wire [15:0] sdram_wr_data;
+wire sdram_wr_enable;
+
+wire [23:0] sdram_rd_addr;
+wire [15:0] sdram_rd_data;
+wire sdram_rd_ready;
+wire sdram_rd_enable;
+
+wire sdram_rd_busy;
+wire sdram_rst_n;
+wire sdram_clk = clk_100m;
+
+reg [23:0] sdram_wr_addr_reg;
+reg [23:0] sdram_rd_addr_reg;
+reg [15:0] sdram_wr_data_reg;
+reg sdram_wr_enable_reg;
+reg sdram_rd_enable_reg;
+
+reg sdram_rst_n_reg;
+
+assign sdram_wr_addr = sdram_wr_addr_reg;
+assign sdram_rd_addr = sdram_rd_addr_reg;
+assign sdram_wr_data = sdram_wr_data_reg;
+assign sdram_wr_enable = sdram_wr_enable_reg;
+assign sdram_rd_enable = sdram_rd_enable_reg;
+assign sdram_rst_n = sdram_rst_n_reg;
+
+
+
+
+
+
+sdram_controller controller (
+    /* host interface */
+    .wr_addr(),
+    .wr_data(),
+    .wr_enable(),
+
+    .rd_addr(),
+    .rd_data(),
+    .rd_ready(),
+    .rd_enable(),
+
+    .busy(),
+    .rst_n(),
+    .clk(sdram_clk),
+
+    /* sdram side */
+    .addr(sdram_addr),
+    .bank_addr(sdram_addr),
+    .data(sdram_dq),
+    .clock_enable(sdram_cke),
+    .cs_n(sdram_ce_n),
+    .ras_n(sdram_ras_n),
+    .cas_n(sdram_cas_n),
+    .we_n(sdram_we_n),
+
+    .data_mask_low(sdram_dqml), 
+    .data_mask_high(sdram_dqmh)
+);
+
+vga #(12, 800, 856, 976, 1040, 600, 637, 643, 666, 1, 1) vga800x600at75 (
+    .clk(clk_vga), 
+    .hdata(hdata), //横坐标
+    .vdata(vdata), //纵坐标
+    .hsync(video_hsync),
+    .vsync(video_vsync),
+    .data_enable(video_de)
+);
 
 // main states
 always @ (posedge clk_in or posedge rst)
