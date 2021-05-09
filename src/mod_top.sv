@@ -143,11 +143,25 @@ reg pos[1:0][2:0] = {1'b0, 1'b0};
 
 //define camera param
 localparam lights[3:0][31:0] = {};
-localparam center[1:0][] = ;
 localparam width = 10'd800;
 localparam height = 10'd600;
-localparam angle[] = ;
-reg direction[1:0][7:0] = {1'b0, 1'b0}; // y_angle, z_angle
+localparam direction_z = 20'd512;
+localparam center_z = 20'd50;
+localparam half_angle_tan_rev = 10'd4;
+localparam angle = 10'd28;
+// localparam angle_sin = 20'd512;
+// localparam angle_cos = 20'd887;
+// localparam angle_tan = 20'd591;
+reg[2:0] x;
+reg[2:0] y;
+reg _dx;
+reg _dy;
+reg[19:0] dx;
+reg[19:0] dy;
+reg _hx;
+reg _hy;
+reg[19:0] hx;
+reg[19:0] hy;
 
 // define state
 reg state[3:0] = 4'b0000;
@@ -186,6 +200,9 @@ begin
         INIT_CAM: begin
             //INIT_CAM
             
+            px[0] <= 10'd0;
+            py[0] <= 10'd0;
+
             state <= DRAW;
         end
         DRAW: begin
@@ -210,6 +227,8 @@ begin
                     py[0] <= py[0];
                 end
                 else begin
+                    
+
                     pip_en[0] <= 1'b0;
                     px[0] <= 10'd0;
                     py[0] <= 10'd0;
