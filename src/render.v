@@ -63,3 +63,5 @@ vga_controller #(12, 800, 856, 976, 1040, 600, 637, 643, 666, 1, 1) vga800x600at
     .vsync(vga_vsync),
     .data_enable(vga_data_en)
 );
+
+end module
