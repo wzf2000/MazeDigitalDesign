@@ -1,4 +1,4 @@
-module sram_controler(
+module sram_controller(
     input wire clk_100m,
     inout reg [31:0] ram_data,
     output reg [19:0] ram_addr,

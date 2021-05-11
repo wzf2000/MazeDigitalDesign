@@ -51,18 +51,18 @@ module mod_top (
     // input  wire        sd_cd,       // 卡插入检测，0 表示有卡插入
     // input  wire        sd_wp,       // 写保护检测，0 表示写保护状态
 
-    // SDRAM 内存，信号具体含义请参考数据手册
-    output wire [12:0] sdram_addr,
-    output wire [1: 0] sdram_bank,
-    output wire        sdram_cas_n,
-    output wire        sdram_ce_n,
-    output wire        sdram_cke,
-    output wire        sdram_clk,
-    output wire [15:0] sdram_dq,
-    output wire        sdram_dqmh,
-    output wire        sdram_dqml,
-    output wire        sdram_ras_n,
-    output wire        sdram_we_n,
+    // // SDRAM 内存，信号具体含义请参考数据手册
+    // output wire [12:0] sdram_addr,
+    // output wire [1: 0] sdram_bank,
+    // output wire        sdram_cas_n,
+    // output wire        sdram_ce_n,
+    // output wire        sdram_cke,
+    // output wire        sdram_clk,
+    // output wire [15:0] sdram_dq,
+    // output wire        sdram_dqmh,
+    // output wire        sdram_dqml,
+    // output wire        sdram_ras_n,
+    // output wire        sdram_we_n,
 
     // // GMII 以太网接口、MDIO 接口，信号具体含义请参考数据手册
     // output wire        eth_gtx_clk,
