@@ -88,7 +88,7 @@ wire clk_in = clk_100m;
 wire clk_vga;
 ip_pll u_ip_pll(
     .inclk0 (clk_in  ),
-    .c0     (clk_vga )  // 50MHz 像素时钟
+    .c0     (clk_vga )  // 25MHz 像素时钟
 );
 
 // 七段数码管扫描演示
