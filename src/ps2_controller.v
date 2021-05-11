@@ -2,7 +2,7 @@
 // 1: straight
 // 2: left
 // 3: right
-module ps2_control(
+module ps2_controller(
     input wire clk, // 50MHz
     input wire rst,
     input wire ps2_clk,
@@ -15,7 +15,7 @@ reg ps2_clk_1;
 reg ps2_clk_2;
 
 // check the negedge of ps2 clock
-always @ (posedge clk or posedge rst) begin
+always @(posedge clk or posedge rst) begin
     if (rst) begin
         ps2_clk_1 <= 1'b1;
         ps2_clk_2 <= 1'b1;
