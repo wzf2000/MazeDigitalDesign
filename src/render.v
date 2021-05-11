@@ -18,7 +18,7 @@ module render (
     output wire [7:0] vga_green,
     output wire [7:0] vga_blue,
 
-    output wire vga_data_enable
+    output wire vga_data_en
 )
 
 wire clk_vga;
@@ -61,5 +61,5 @@ vga_controller #(12, 800, 856, 976, 1040, 600, 637, 643, 666, 1, 1) vga800x600at
 
     .hsync(vga_hsync),
     .vsync(vga_vsync),
-    .data_enable(vga_data_enable)
+    .data_enable(vga_data_en)
 );
