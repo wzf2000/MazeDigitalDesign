@@ -3,11 +3,11 @@
 // 2: left
 // 3: right
 module ps2_control(
-    input clk, // 50MHz
-    input rst,
-    input ps2_clk,
-    input ps2_data,
-    output [1:0] data
+    input wire clk, // 50MHz
+    input wire rst,
+    input wire ps2_clk,
+    input wire ps2_data,
+    output wire [1:0] data
 );
 
 wire ps2_clk_n;
