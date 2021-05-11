@@ -20,13 +20,13 @@ module mod_top (
     // output wire        uart_txd,    // 串口发送数据
     // input  wire        uart_rxd,    // 串口接收数据
 
-    // // 4MB SRAM 内存
-    // inout  wire [31:0] base_ram_data,   // SRAM 数据
-    // output wire [19:0] base_ram_addr,   // SRAM 地址
-    // output wire [3: 0] base_ram_be_n,   // SRAM 字节使能，低有效。如果不使用字节使能，请保持为0
-    // output wire        base_ram_ce_n,   // SRAM 片选，低有效
-    // output wire        base_ram_oe_n,   // SRAM 读使能，低有效
-    // output wire        base_ram_we_n,   // SRAM 写使能，低有效
+    // 4MB SRAM 内存
+    inout  wire [31:0] base_ram_data,   // SRAM 数据
+    output wire [19:0] base_ram_addr,   // SRAM 地址
+    output wire [3: 0] base_ram_be_n,   // SRAM 字节使能，低有效。如果不使用字节使能，请保持为0
+    output wire        base_ram_ce_n,   // SRAM 片选，低有效
+    output wire        base_ram_oe_n,   // SRAM 读使能，低有效
+    output wire        base_ram_we_n,   // SRAM 写使能，低有效
 
     // HDMI 图像输出
     output wire [7: 0] video_red,   // 红色像素，8位
