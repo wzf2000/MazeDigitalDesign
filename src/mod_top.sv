@@ -126,9 +126,9 @@ wire [11:0] vdata;  // 当前纵坐标
 
 // 生成彩条数据，分别取坐标低位作为 RGB 值
 // 警告：该图像生成方式仅供演示，请勿使用横纵坐标驱动大量逻辑！！
-assign video_red = vdata < 200 ? hdata[8:1] : 0;
-assign video_green = vdata >= 200 && vdata < 400 ? hdata[8:1] : 0;
-assign video_blue = vdata >= 400 ? hdata[8:1] : 0;
+// assign video_red = vdata < 200 ? hdata[8:1] : 0;
+// assign video_green = vdata >= 200 && vdata < 400 ? hdata[8:1] : 0;
+// assign video_blue = vdata >= 400 ? hdata[8:1] : 0;
 
 // define maze param
 // 01000
@@ -139,10 +139,10 @@ assign video_blue = vdata >= 400 ? hdata[8:1] : 0;
 localparam maze = 25'b0100001010010100101000010;
 localparam hor_wall = 30'b111001111111111111111111100111;
 localparam ver_wall = 30'b100001000011100001110000100001;
-reg [2:0] pos[1:0] = {1'b0, 1'b0};
+//reg [2:0] pos[1:0] = {1'b0, 1'b0};
 
 //define camera param
-localparam lights[3:0][31:0] = {};
+//localparam lights[3:0][31:0] = {32'd0, 32'd0, 32'd0};
 localparam width = 10'd800;
 localparam height = 10'd600;
 localparam direction_z = 20'd512;
@@ -185,81 +185,8 @@ reg [3:0] pip_en; // 使能 拉低有效
 reg [9:0] px[3:0]; // 像素点x
 reg [9:0] py[3:0]; // 像素点y
 
-//sdram params&var 
-//input assign with reg
-wire [23:0] sdram_wr_addr;
-wire [15:0] sdram_wr_data;
-wire sdram_wr_enable;
-
-wire [23:0] sdram_rd_addr;
-wire [15:0] sdram_rd_data;
-wire sdram_rd_ready;
-wire sdram_rd_enable;
-
-wire sdram_rd_busy;
-wire sdram_rst_n;
-wire sdram_clk = clk_100m;
-
-reg [23:0] sdram_wr_addr_reg;
-reg [23:0] sdram_rd_addr_reg;
-reg [15:0] sdram_wr_data_reg;
-reg sdram_wr_enable_reg;
-reg sdram_rd_enable_reg;
-
-reg sdram_rst_n_reg;
-
-assign sdram_wr_addr = sdram_wr_addr_reg;
-assign sdram_rd_addr = sdram_rd_addr_reg;
-assign sdram_wr_data = sdram_wr_data_reg;
-assign sdram_wr_enable = sdram_wr_enable_reg;
-assign sdram_rd_enable = sdram_rd_enable_reg;
-assign sdram_rst_n = sdram_rst_n_reg;
-
-
-
-
-
-
-sdram_controller controller (
-    /* host interface */
-    .wr_addr(),
-    .wr_data(),
-    .wr_enable(),
-
-    .rd_addr(),
-    .rd_data(),
-    .rd_ready(),
-    .rd_enable(),
-
-    .busy(),
-    .rst_n(),
-    .clk(sdram_clk),
-
-    /* sdram side */
-    .addr(sdram_addr),
-    .bank_addr(sdram_addr),
-    .data(sdram_dq),
-    .clock_enable(sdram_cke),
-    .cs_n(sdram_ce_n),
-    .ras_n(sdram_ras_n),
-    .cas_n(sdram_cas_n),
-    .we_n(sdram_we_n),
-
-    .data_mask_low(sdram_dqml), 
-    .data_mask_high(sdram_dqmh)
-);
-
-vga #(12, 800, 856, 976, 1040, 600, 637, 643, 666, 1, 1) vga800x600at75 (
-    .clk(clk_vga), 
-    .hdata(hdata), //横坐标
-    .vdata(vdata), //纵坐标
-    .hsync(video_hsync),
-    .vsync(video_vsync),
-    .data_enable(video_de)
-);
-
 // main states
-always @ (posedge clk_in or posedge rst)
+always @ (posedge clk_in or posedge reset_n)
 begin
     case (state)
         STILL: begin
@@ -309,7 +236,7 @@ begin
             end
             else begin
                 if (px[0] == width - 1 && py[0] == height - 1) begin
-                    pip_en[0] = 1'b1;
+                    pip_en[0] <= 1'b1;
                     px[0] <= width;
                     py[0] <= height;
                 end
@@ -365,14 +292,70 @@ begin
     endcase
 end
 
+reg rd_addr_offset = 1'b0;
+reg wr_addr_offset = 1'b1;
+reg wr_en;
+reg [18:0] wr_addr;
+reg [31:0] wr_data;
+reg [7:0] wr_red = 0;
+reg [7:0] wr_green = 0;
+reg [7:0] wr_blue = 0;
+integer cnt = 0;
+
+assign wr_data = {{8{1'b0}}, wr_red, wr_green, wr_blue};
+
+always @(posedge clk_vga) begin
+    if (wr_addr == {19{1'b1}}) begin
+        wr_addr <= 0;
+        if (cnt == 119) begin
+            cnt <= 0;
+            rd_addr_offset <= wr_addr_offset;
+            wr_addr_offset <= rd_addr_offset;
+            if (wr_red == 8'd255) begin
+                wr_red <= 0;
+                wr_green <= 0;
+                wr_blue <= 0;
+            end
+            else begin
+                wr_red <= wr_red + 1'b1;
+                wr_green <= wr_green + 1'b1;
+                wr_blue <= wr_blue + 1'b1;
+            end
+        end
+        else begin
+            cnt <= cnt + 1;
+        end
+    end
+    else begin
+        wr_addr <= wr_addr + 1'b1;
+    end
+end
+
 assign video_clk = clk_vga;
-vga #(12, 800, 856, 976, 1040, 600, 637, 643, 666, 1, 1) vga800x600at75 (
-    .clk(clk_vga), 
-    .hdata(hdata), //横坐标
-    .vdata(vdata), //纵坐标
-    .hsync(video_hsync),
-    .vsync(video_vsync),
-    .data_enable(video_de)
+render imgae_render(
+    .clk(clk_100m),
+    .clk_vga(clk_vga),
+
+    .ram_data(base_ram_data),
+    .ram_addr(base_ram_addr),
+    .ram_ce_n(base_ram_ce_n),
+    .ram_oe_n(base_ram_oe_n),
+    .ram_we_n(base_ram_we_n),
+
+    .rd_addr_offset(rd_addr_offset),
+    .wr_addr_offset(wr_addr_offset),
+    .sram_wr_en(wr_en),
+    .sram_wr_addr(wr_addr),
+    .sram_wr_data(wr_data),
+
+    .vga_hsync(video_hsync),
+    .vga_vsync(video_vsync),
+
+    .vga_red(video_red), 
+    .vga_green(video_green),
+    .vga_blue(video_blue),
+
+    .vga_data_en(video_de)
 );
 /* =========== Demo code end =========== */
 

@@ -7,7 +7,7 @@ module ps2_controller(
     input wire rst,
     input wire ps2_clk,
     input wire ps2_data,
-    output wire [1:0] data
+    output reg [1:0] data
 );
 
 wire ps2_clk_n;
@@ -57,7 +57,7 @@ reg [7:0] ret_data;
 always @(posedge clk or posedge rst) begin
     if (rst) begin
         ps2_f0 <= 1'b0;
-        ret_data <= 8'00;
+        ret_data <= 8'd0;
     end
     else if (i == 4'd10) begin
         if (tmp == 8'hf0)

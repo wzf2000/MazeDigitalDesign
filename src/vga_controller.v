@@ -27,32 +27,34 @@ module vga_controller
 
     output reg [WIDTH - 1:0] hdata,
     output reg [WIDTH - 1:0] vdata,
-    output reg [19:0] address,
+    output reg [18:0] address,
 
     output wire data_enable
 );
 
+assign red = data[23:16];
+assign green = data[15:8];
+assign blue = data[7:0];
+
 // hdata&vdata
 always @ (posedge clk)
 begin
-    address <= 20'b0;
-
-    red <= data[23:16];
-    green <= data[15:8];
-    red <= data[7:0];
     if (hdata == (HMAX - 1)) begin
         if (vdata == (VMAX - 1)) begin
             hdata <= 0;
             vdata <= 0;
+            address <= 19'd0;
         end
         else begin
             hdata <= 0;
             vdata <= vdata + 1;
+            address <= address + 1'b1;
         end
     end
     else begin
         hdata <= hdata + 1;
         vdata <= vdata;
+        address <= address + 1'b1;
     end
 end
 
