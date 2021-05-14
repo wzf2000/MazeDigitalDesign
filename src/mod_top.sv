@@ -297,9 +297,9 @@ reg wr_addr_offset = 1'b1;
 reg wr_en;
 reg [18:0] wr_addr;
 reg [31:0] wr_data;
-reg [7:0] wr_red = 0;
-reg [7:0] wr_green = 0;
-reg [7:0] wr_blue = 0;
+reg [7:0] wr_red = 8'd0;
+reg [7:0] wr_green = 8'd0;
+reg [7:0] wr_blue = 8'd0;
 integer cnt = 0;
 
 assign wr_data = {{8{1'b0}}, wr_red, wr_green, wr_blue};
@@ -307,7 +307,7 @@ assign wr_data = {{8{1'b0}}, wr_red, wr_green, wr_blue};
 always @(posedge clk_vga) begin
     if (wr_addr == {19{1'b1}}) begin
         wr_addr <= 0;
-        if (cnt == 119) begin
+        if (cnt == 0) begin
             cnt <= 0;
             rd_addr_offset <= wr_addr_offset;
             wr_addr_offset <= rd_addr_offset;
