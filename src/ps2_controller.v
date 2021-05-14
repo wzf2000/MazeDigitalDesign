@@ -7,16 +7,19 @@ module ps2_controller(
     input wire rst,
     input wire ps2_clk,
     input wire ps2_data,
-    output reg [1:0] data
+    output reg [1:0] data,
+    output reg signal
 );
+
+initial signal = 0;
 
 wire ps2_clk_n;
 reg ps2_clk_1;
 reg ps2_clk_2;
 
 // check the negedge of ps2 clock
-always @(posedge clk or posedge rst) begin
-    if (rst) begin
+always @(posedge clk or negedge rst) begin
+    if (!rst) begin
         ps2_clk_1 <= 1'b1;
         ps2_clk_2 <= 1'b1;
     end
@@ -32,12 +35,12 @@ assign ps2_clk_n = ps2_clk_2 & (!ps2_clk_1);
 reg [3:0] i;
 reg [7:0] tmp;
 
-always @(posedge clk or posedge rst) begin
-    if (rst) begin
+always @(posedge clk or negedge rst) begin
+    if (!rst) begin
         i <= 4'd0;
         tmp <= 8'h00;
     end
-    else begin
+    else if (ps2_clk_n) begin
         case (i)
             4'd0: i <= i + 1'b1;
             4'd1,4'd2,4'd3,4'd4,4'd5,4'd6,4'd7,4'd8: begin
@@ -52,33 +55,49 @@ always @(posedge clk or posedge rst) begin
 end
 
 reg ps2_f0;
-reg [7:0] ret_data;
 
-always @(posedge clk or posedge rst) begin
-    if (rst) begin
+always @(posedge clk or negedge rst) begin
+    if (!rst) begin
         ps2_f0 <= 1'b0;
-        ret_data <= 8'd0;
+        signal <= 0;
+        data <= 2'd0;
     end
     else if (i == 4'd10) begin
-        if (tmp == 8'hf0)
+        if (tmp == 8'hf0) begin
             ps2_f0 <= 1'b1;
+            signal <= 0;
+        end
         else if (!ps2_f0)
-            ret_data <= tmp;
+            case (tmp)
+                8'h1d: begin
+                    data <= 2'd1; // "W"
+                    signal <= 1;
+                end
+                8'h43: begin
+                    data <= 2'd1; // "I"
+                    signal <= 1;
+                end
+                8'h1c: begin
+                    data <= 2'd2; // "A"
+                    signal <= 1;
+                end
+                8'h3b: begin
+                    data <= 2'd2; // "J"
+                    signal <= 1;
+                end
+                8'h23: begin
+                    data <= 2'd3; // "D"
+                    signal <= 1;
+                end
+                8'h4b: begin
+                    data <= 2'd3; // "L"
+                    signal <= 1;
+                end
+                default:;
+            endcase
         else
             ps2_f0 <= 1'b0;
     end
-end
-
-always @(ret_data) begin
-    case (ret_data)
-        8'h1d: data = 2'd1; // "W"
-        8'h43: data = 2'd1; // "I"
-        8'h1c: data = 2'd2; // "A"
-        8'h3b: data = 2'd2; // "J"
-        8'h23: data = 2'd3; // "D"
-        8'h4b: data = 2'd3; // "L"
-        default: data = 2'd0;
-    endcase
 end
 
 endmodule

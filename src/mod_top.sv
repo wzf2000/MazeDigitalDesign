@@ -12,9 +12,9 @@ module mod_top (
     output wire [7: 0] dpy_digit,   // 七段数码管笔段信号
     output wire [7: 0] dpy_segment, // 七段数码管位扫描信号
 
-    // // PS/2 键盘、鼠标接口
-    // input  wire        ps2_clock,   // PS/2 时钟信号
-    // input  wire        ps2_data,    // PS/2 数据信号
+    // PS/2 键盘、鼠标接口
+    input  wire        ps2_clock,   // PS/2 时钟信号
+    input  wire        ps2_data,    // PS/2 数据信号
 
     // // USB 转 TTL 调试串口
     // output wire        uart_txd,    // 串口发送数据
@@ -86,9 +86,11 @@ wire clk_in = clk_100m;
 
 // PLL 分频演示，从输入产生不同频率的时钟
 wire clk_vga;
+wire clk_ps2;
 ip_pll u_ip_pll(
     .inclk0 (clk_in  ),
-    .c0     (clk_vga )  // 25MHz 像素时钟
+    .c0     (clk_vga ),  // 25MHz 像素时钟
+    .c1     (clk_ps2)
 );
 
 // 七段数码管扫描演示
@@ -115,10 +117,6 @@ always @(posedge clk_in or posedge reset_btn) begin
         end
 	 end
 end
-
-// LED
-assign leds[15:0] = number[15:0];
-assign leds[31:16] = ~(dip_sw);
 
 // 图像输出演示，分辨率 800x600@75Hz，像素时钟为 50MHz，显示渐变色彩条
 wire [11:0] hdata;  // 当前横坐标
@@ -292,6 +290,25 @@ begin
     endcase
 end
 
+
+wire [1:0] move_data;
+reg move_en = 0;
+wire signal;
+
+// LED
+assign leds[1:0] = move_data;
+assign leds[15:2] = 12'd0;
+assign leds[31:16] = ~(dip_sw);
+
+ps2_controller u_ps2_controller(
+    .clk(clk_ps2), // 50MHz
+    .rst(reset_n),
+    .ps2_clk(ps2_clock),
+    .ps2_data(ps2_data),
+    .data(move_data),
+    .signal(signal)
+);
+
 reg rd_addr_offset = 1'b0;
 reg wr_addr_offset = 1'b1;
 reg wr_en;
@@ -300,31 +317,42 @@ reg [31:0] wr_data;
 reg [7:0] wr_red = 8'd0;
 reg [7:0] wr_green = 8'd0;
 reg [7:0] wr_blue = 8'd0;
-integer cnt = 0;
+reg [7:0] red;
+reg [7:0] green;
+reg [7:0] blue;
 
-assign wr_data = {{8{1'b0}}, wr_red, wr_green, wr_blue};
+assign wr_data = {{8{1'b0}}, red, green, blue};
+
+always @(posedge clk_in) begin
+    if (!move_en && signal) begin
+        case (move_data)
+            2'b01: begin
+                wr_red <= wr_red + 16;
+            end
+            2'b10: begin
+                wr_green <= wr_green + 16;
+            end
+            2'b11: begin
+                wr_blue <= wr_blue + 16;
+            end
+            default: begin
+            end
+        endcase
+        move_en <= 1'b1;
+    end
+    else if (!signal) begin
+        move_en <= 1'b0;
+    end
+end
 
 always @(posedge clk_vga) begin
-    if (wr_addr == {19{1'b1}}) begin
+    if (wr_addr == 19'd479999) begin
         wr_addr <= 0;
-        if (cnt == 0) begin
-            cnt <= 0;
-            rd_addr_offset <= wr_addr_offset;
-            wr_addr_offset <= rd_addr_offset;
-            if (wr_red == 8'd255) begin
-                wr_red <= 0;
-                wr_green <= 0;
-                wr_blue <= 0;
-            end
-            else begin
-                wr_red <= wr_red + 1'b1;
-                wr_green <= wr_green + 1'b1;
-                wr_blue <= wr_blue + 1'b1;
-            end
-        end
-        else begin
-            cnt <= cnt + 1;
-        end
+        rd_addr_offset <= wr_addr_offset;
+        wr_addr_offset <= rd_addr_offset;
+        red <= wr_red;
+        green <= wr_green;
+        blue <= wr_blue;
     end
     else begin
         wr_addr <= wr_addr + 1'b1;
