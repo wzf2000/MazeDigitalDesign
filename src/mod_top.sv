@@ -134,9 +134,9 @@ wire [11:0] vdata;  // 当前纵坐标
 // 01010
 // 01010
 // 00010
-localparam maze = 25'b0100001010010100101000010;
-localparam hor_wall = 30'b111001111111111111111111100111;
-localparam ver_wall = 30'b100001000011100001110000100001;
+localparam [0:4][4:0] maze = {5'b00010, 5'b01010, 5'b01010, 5'b01010, 5'b01000};
+localparam hor_wall = 30'b100001100011100001110001100001;
+localparam ver_wall = 30'b111001111111111111111111100111;
 //reg [2:0] pos[1:0] = {1'b0, 1'b0};
 
 //define camera param
@@ -150,16 +150,13 @@ localparam angle = 10'd28;
 // localparam angle_sin = 20'd512;
 // localparam angle_cos = 20'd887;
 // localparam angle_tan = 20'd591;
+reg [1:0] dir;
+localparam U = 2'd0;
+localparam L = 2'd1;
+localparam D = 2'd2;
+localparam R = 2'd3;
 reg [2:0] x;
 reg [2:0] y;
-reg _dx;
-reg _dy;
-reg [19:0] dx;
-reg [19:0] dy;
-reg _hx;
-reg _hy;
-reg [19:0] hx;
-reg [19:0] hy;
 
 // define state
 reg [3:0] state = 4'b0000;
@@ -168,9 +165,10 @@ localparam INIT_CAM = 4'b0010;
 localparam DRAW = 4'b0011;
 
 // define movement signal
-reg [1:0] draw_mode = 2'b00; // 10 move 11 rotate
-localparam MOVE = 2'b10;
-localparam ROTATE = 2'b11;
+reg [1:0] draw_mode = 2'b00; // 01 move 10 left 11 right
+localparam MOVE = 2'b01;
+localparam LEFT = 2'b10;
+localparam RIGHT = 2'b11;
 
 
 // define pipeline
@@ -183,16 +181,99 @@ reg [3:0] pip_en; // 使能 拉低有效
 reg [9:0] px[3:0]; // 像素点x
 reg [9:0] py[3:0]; // 像素点y
 
+// LED
+assign leds[1:0] = move_data;
+assign leds[15:2] = 12'd0;
+assign leds[31:16] = ~(dip_sw);
+
+ps2_controller u_ps2_controller(
+    .clk(clk_ps2), // 50MHz
+    .rst(reset_n),
+    .ps2_clk(ps2_clock),
+    .ps2_data(ps2_data),
+    .data(move_data),
+    .signal(signal)
+);
+
+wire [1:0] move_data;
+reg move_en = 0;
+wire signal;
+
+reg rd_addr_offset = 1'b0;
+reg wr_addr_offset = 1'b1;
+reg wr_en;
+reg [18:0] wr_addr;
+reg [31:0] wr_data;
+reg [7:0] image_cnt = 8'd0;
+reg [8:0] center_x = 8'd0;
+reg [8:0] center_y = 8'd0;
+reg [8:0] center_z = 8'd32;
+reg [8:0] center_angle = 9'd180;
+localparam [0:359][8:0] Dir_x = {}; //TODO: add directions
+localparam [0:359][8:0] Dir_y = {}; //TODO: add directions
+
+reg [8:0] dir_x = Dir_x[180];
+reg [8:0] dir_y = Dir_y[180];
+wire [8:0] hor_x;
+wire [8:0] hor_y;
+assign hor_x = dir_y;
+assign hor_y = -dir_x;
+/*
+R = [[hor_x,    0,   dir_x],
+     [hor_y,    0,   dir_y],
+     [    0,   -1,       0]]
+*/
+
 // main states
-always @ (posedge clk_in or posedge reset_n)
-begin
+always @ (posedge clk_vga or posedge reset_n) begin
+    if (!signal) begin
+        move_en <= 1'b0;
+    end
     case (state)
         STILL: begin
-            if (draw_mode == MOVE || draw_mode == ROTATE) begin
-                state <= INIT_CAM;
-            end
-            else begin // stay still
-                state <= state;
+            if (!move_en && signal) begin
+                case (move_data)
+                    MOVE: begin
+                        case (dir)
+                            U: begin
+                                if (x > 3'd0 && !maze[x - 1][y]) begin
+                                    draw_mode <= move_data;
+                                    state <= INIT_CAM;
+                                    image_cnt <= 8'd0;
+                                end
+                            end
+                            end
+                            L: begin
+                                if (y > 3'd0 && !maze[x][y - 1]) begin
+                                    draw_mode <= move_data;
+                                    state <= INIT_CAM;
+                                    image_cnt <= 8'd0;
+                                end
+                            end
+                            D: begin
+                                if (x < 3'd4 && !maze[x + 1][y]) begin
+                                    draw_mode <= move_data;
+                                    state <= INIT_CAM;
+                                    image_cnt <= 8'd0;
+                                end
+                            end
+                            R: begin
+                                if (y < 3'd4 && !maze[x][y + 1]) begin
+                                    draw_mode <= move_data;
+                                    state <= INIT_CAM;
+                                    image_cnt <= 8'd0;
+                                end
+                            end
+                        endcase
+                    end
+                    LEFT, RIGHT: begin
+                        draw_mode <= move_data;
+                        state <= INIT_CAM;
+                        image_cnt <= 8'd0;
+                    end
+                    default: state <= state;
+                endcase
+                move_en <= 1'b1;
             end
         end 
         INIT_CAM: begin
@@ -200,8 +281,100 @@ begin
             
             px[0] <= 10'd0;
             py[0] <= 10'd0;
-
+            if ((image_cnt == 8'd90 && (draw_mode == LEFT || draw_mode == RIGHT)) || (image_cnt == 8'd100 && draw_mode == MOVE)) begin
+                image_cnt <= 8'd0;
+                state <= STILL;
+                case (draw_mode)
+                    MVOE:
+                        case (dir)
+                            U: begin
+                                if (x > 3'd0 && !maze[x - 1][y])
+                                    x <= x - 1;
+                            end
+                            L: begin
+                                if (y > 3'd0 && !maze[x][y - 1])
+                                    y <= y - 1;
+                            end
+                            D: begin
+                                if (x < 3'd4 && !maze[x + 1][y])
+                                    x <= x + 1;
+                            end
+                            R: begin
+                                if (y < 3'd4 && !maze[x][y + 1])
+                                    y <= y + 1;
+                            end
+                        endcase
+                    LEFT, RIGHT:
+                        case (dir)
+                            U: begin
+                                if (draw_mode == LEFT)
+                                    dir <= L;
+                                else
+                                    dir <= R;
+                            end
+                            L: begin
+                                if (draw_mode == LEFT)
+                                    dir <= D;
+                                else
+                                    dir <= U;
+                            end
+                            D: begin
+                                if (draw_mode == LEFT)
+                                    dir <= R;
+                                else
+                                    dir <= L;
+                            end
+                            R: begin
+                                if (draw_mode == LEFT)
+                                    dir <= U;
+                                else
+                                    dir <= D;
+                            end
+                            endcase
+                endcase
+            end
+            else begin
+                image_cnt <= image_cnt + 1'b1;
+                state <= state;
+                init_state <= 3'd1;
+                case (draw_mode)
+                    MOVE:
+                        case (dir)
+                            U: begin
+                                center_x <= center_x - 1;
+                                center_y <= center_y;
+                            end
+                            L: begin
+                                center_x <= center_x;
+                                center_y <= center_y - 1;
+                            end
+                            D: begin
+                                center_x <= center_x + 1;
+                                center_y <= center_y;
+                            end
+                            R: begin
+                                center_x <= center_x;
+                                center_y <= center_y + 1;
+                            end
+                        endcase
+                    LEFT: begin
+                        if (center_angle == 9'd0)
+                            center_angle <= 9'd359;
+                        else
+                            center_angle <= center_angle - 1;
+                    end
+                    RIGHT: begin
+                        if (center_angle == 9'd359)
+                            center_angle <= 9'd0;
+                        else
+                            center_angle <= center_angle + 1;
+                    end
+                endcase
+                dir_x <= Dir_x[center_angle];
+                dir_y <= Dir_y[center_angle];
+            end
             state <= DRAW;
+            init_state <= 0;
         end
         DRAW: begin
             // 流水线
@@ -269,6 +442,8 @@ begin
             // SET_PIXEL
             if (pip_en[2] == 1'b0) begin
                 // do set_pixel
+                if (px[3] == 0 && py[3] == 0)
+                    wr_en <= 1;
             end
             else begin
                 // stay
@@ -279,6 +454,7 @@ begin
                 state <= DRAW;
             end
             else if (px[3] == width) begin
+                wr_en <= 0;
                 state <= INIT_CAM;
             end
             else begin
@@ -290,74 +466,23 @@ begin
     endcase
 end
 
+always @(posedge clk_vga) begin
+    if (wr_en) begin
+        if (wr_addr == 19'd479999) begin
+            wr_addr <= 19'd0;
+            rd_addr_offset <= wr_addr_offset;
+            wr_addr_offset <= rd_addr_offset;
+        end
+        else begin
+            wr_addr <= wr_addr + 1'b1;
+        end
+    end
+end
 
-wire [1:0] move_data;
-reg move_en = 0;
-wire signal;
-
-// LED
-assign leds[1:0] = move_data;
-assign leds[15:2] = 12'd0;
-assign leds[31:16] = ~(dip_sw);
-
-ps2_controller u_ps2_controller(
-    .clk(clk_ps2), // 50MHz
-    .rst(reset_n),
-    .ps2_clk(ps2_clock),
-    .ps2_data(ps2_data),
-    .data(move_data),
-    .signal(signal)
-);
-
-reg rd_addr_offset = 1'b0;
-reg wr_addr_offset = 1'b1;
-reg wr_en;
-reg [18:0] wr_addr;
-reg [31:0] wr_data;
-reg [7:0] wr_red = 8'd0;
-reg [7:0] wr_green = 8'd0;
-reg [7:0] wr_blue = 8'd0;
 reg [7:0] red;
 reg [7:0] green;
 reg [7:0] blue;
-
 assign wr_data = {{8{1'b0}}, red, green, blue};
-
-always @(posedge clk_in) begin
-    if (!move_en && signal) begin
-        case (move_data)
-            2'b01: begin
-                wr_red <= wr_red + 16;
-            end
-            2'b10: begin
-                wr_green <= wr_green + 16;
-            end
-            2'b11: begin
-                wr_blue <= wr_blue + 16;
-            end
-            default: begin
-            end
-        endcase
-        move_en <= 1'b1;
-    end
-    else if (!signal) begin
-        move_en <= 1'b0;
-    end
-end
-
-always @(posedge clk_vga) begin
-    if (wr_addr == 19'd479999) begin
-        wr_addr <= 0;
-        rd_addr_offset <= wr_addr_offset;
-        wr_addr_offset <= rd_addr_offset;
-        red <= wr_red;
-        green <= wr_green;
-        blue <= wr_blue;
-    end
-    else begin
-        wr_addr <= wr_addr + 1'b1;
-    end
-end
 
 assign video_clk = clk_vga;
 render imgae_render(
