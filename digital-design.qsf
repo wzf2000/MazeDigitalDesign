@@ -75,9 +75,9 @@ set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
 set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
 set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
 set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
-set_global_assignment -name VERILOG_FILE src/intersection.v
+set_global_assignment -name SYSTEMVERILOG_FILE src/get_min.sv
+set_global_assignment -name SYSTEMVERILOG_FILE src/intersection.sv
 set_global_assignment -name VERILOG_FILE src/get_pos.v
-set_global_assignment -name VERILOG_FILE src/get_min.v
 set_global_assignment -name VERILOG_FILE src/check_valid_ground.v
 set_global_assignment -name VERILOG_FILE src/check_valid.v
 set_global_assignment -name VERILOG_FILE src/vga_controller.v

@@ -169,7 +169,8 @@ reg [9:0] py[8:0]; // 像素点y
 
 // LED
 assign leds[1:0] = move_data;
-assign leds[15:2] = 12'd0;
+assign leds[2] = wr_en;
+assign leds[15:] = 12'd0;
 assign leds[31:16] = ~(dip_sw);
 
 wire signal;
@@ -188,7 +189,7 @@ reg move_en = 0;
 
 reg rd_addr_offset = 1'b0;
 reg wr_addr_offset = 1'b1;
-reg wr_en;
+reg wr_en = 1'b0;
 reg [18:0] wr_addr;
 reg [31:0] wr_data;
 reg [7:0] image_cnt = 8'd0;
@@ -937,9 +938,9 @@ reg [9:0] tmp[1:0];
 reg signed [9:0] ray_dir[2:0];   // * 2 ^ 9
 reg signed [9:0] ray_dir_R[1:0][2:0]; // * 2 ^ 8
 
-wire signed [17:0] hor_p_1[5:0];
-wire signed [17:0] ver_p_1[5:0];
-wire signed [17:0] ground_1;
+wire signed [18:0] hor_p_1[5:0];
+wire signed [18:0] ver_p_1[5:0];
+wire signed [18:0] ground_1;
 wire signed [9:0] hor_p_2[5:0];
 wire signed [9:0] ver_p_2[5:0];
 wire signed [9:0] ground_2;
@@ -1009,7 +1010,7 @@ generate
             .clk(clk_vga),
             .dir(ray_dir_R[0][1]),
             .ori(center_y),
-            .p(hor_p_1[yy])
+            .p(ver_p_1[yy])
         );
         get_pos getter_y(
             .clk(clk_vga),
@@ -1020,9 +1021,9 @@ generate
             .dir_x(ray_dir_R[1][0]),
             .dir_y(ray_dir_R[1][1]),
             .dir_z(ray_dir_R[1][2]),
-            .out_x(ver_out_2[yy][0]),
-            .out_y(ver_out_2[yy][1]),
-            .out_z(ver_out_2[yy][2]),
+            .out_x(ver_out_1[yy][0]),
+            .out_y(ver_out_1[yy][1]),
+            .out_z(ver_out_1[yy][2]),
             .out_p(ver_p_2[yy])
         );
         check_valid checker_y(
