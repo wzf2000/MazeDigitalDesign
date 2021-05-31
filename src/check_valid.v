@@ -1,6 +1,6 @@
 module check_valid(
     input wire clk,
-    input wire [4:0] wall;
+    input wire [4:0] wall,
     input wire signed [9:0] in_p,
     input wire signed [17:0] in_x,
     input wire signed [17:0] in_y,
