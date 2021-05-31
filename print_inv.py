@@ -8,7 +8,7 @@ with open("inv.v", "w") as f:
             x = (2 ** 9) / i
             x = int(round(x))
             if (i == 511):
-                f.write('\t9\'d{:0>9s}\n'.format(format(x, 'b')))
+                f.write('\t9\'b{:0>9s}\n'.format(format(x, 'b')))
             else:
-                f.write('\t9\'d{:0>9s},\n'.format(format(x, 'b')))
+                f.write('\t9\'b{:0>9s},\n'.format(format(x, 'b')))
     f.write('};\n')

@@ -12,9 +12,9 @@ with open("dir.v", "w") as f:
         if x < 0:
             x += 1024
         if (i == 359):
-            f.write('\t10\'d{:0>10s}\n'.format(format(x, 'b')))
+            f.write('\t10\'b{:0>10s}\n'.format(format(x, 'b')))
         else:
-            f.write('\t10\'d{:0>10s},\n'.format(format(x, 'b')))
+            f.write('\t10\'b{:0>10s},\n'.format(format(x, 'b')))
     f.write('};\n')
     f.write('localparam signed [0:359][9:0] Dir_y = {')
     f.write('\n')
@@ -27,7 +27,7 @@ with open("dir.v", "w") as f:
         if x < 0:
             x += 1024
         if (i == 359):
-            f.write('\t10\'d{:0>10s}\n'.format(format(x, 'b')))
+            f.write('\t10\'b{:0>10s}\n'.format(format(x, 'b')))
         else:
-            f.write('\t10\'d{:0>10s},\n'.format(format(x, 'b')))
+            f.write('\t10\'b{:0>10s},\n'.format(format(x, 'b')))
     f.write('};\n')
