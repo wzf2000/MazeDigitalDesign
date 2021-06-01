@@ -170,7 +170,7 @@ reg [9:0] py[8:0]; // 像素点y
 // LED
 assign leds[1:0] = move_data;
 assign leds[2] = wr_en;
-assign leds[15:] = 12'd0;
+assign leds[15:3] = 12'd0;
 assign leds[31:16] = ~(dip_sw);
 
 wire signal;
@@ -1179,7 +1179,7 @@ always @ (posedge clk_vga or posedge reset_n) begin
         draw_mode <= RIGHT;
         image_cnt <= 8'd89;
         center_angle <= 9'd179;
-        center_x, center_y, center_z <= {10'd32, 10'd32, 10'd32};
+        {center_x, center_y, center_z} <= {10'd32, 10'd32, 10'd32};
         move_en <= 1'b1;
         state <= INIT_CAM;
     end
