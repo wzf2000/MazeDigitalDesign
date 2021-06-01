@@ -177,7 +177,7 @@ wire signal;
 
 ps2_controller u_ps2_controller(
     .clk(clk_ps2), // 50MHz
-    .rst(reset_n),
+    .rst(reset_btn),
     .ps2_clk(ps2_clock),
     .ps2_data(ps2_data),
     .data(move_data),
@@ -1174,12 +1174,15 @@ reg [7:0] blue;
 assign wr_data = {{8{1'b0}}, red, green, blue};
 
 // main states
-always @ (posedge clk_vga or posedge reset_n) begin
-    if (reset_n) begin
+always @ (posedge clk_vga or posedge reset_btn) begin
+    if (reset_btn) begin
         draw_mode <= RIGHT;
         image_cnt <= 8'd89;
         center_angle <= 9'd179;
         {center_x, center_y, center_z} <= {10'd32, 10'd32, 10'd32};
+        x <= 3'd0;
+        y <= 3'd0;
+        dir <= R;
         move_en <= 1'b1;
         state <= INIT_CAM;
     end
@@ -1294,7 +1297,7 @@ always @ (posedge clk_vga or posedge reset_n) begin
                 end
                 else begin
                     image_cnt <= image_cnt + 1'b1;
-                    state <= state;
+                    state <= DRAW;
                     case (draw_mode)
                         MOVE:
                             case (dir)
@@ -1331,7 +1334,6 @@ always @ (posedge clk_vga or posedge reset_n) begin
                     dir_x <= Dir_x[center_angle];
                     dir_y <= Dir_y[center_angle];
                 end
-                state <= DRAW;
             end
             DRAW: begin
                 // 流水线
