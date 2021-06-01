@@ -1502,7 +1502,6 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                     red <= phone[0];
                     green <= phone[1];
                     blue <= phone[2];
-                    wr_addr <= width * py[6] + px[6];
                 end
                 else begin
                     // stay
@@ -1526,21 +1525,21 @@ always @ (posedge clk_vga or posedge reset_btn) begin
     
 end
 
-// always @(posedge clk_vga) begin
-//     if (wr_en) begin
-//         if (wr_addr == 19'd479999) begin
-//             wr_addr <= 19'd0;
-//             rd_addr_offset <= wr_addr_offset;
-//             wr_addr_offset <= rd_addr_offset;
-//         end
-//         else begin
-//             wr_addr <= wr_addr + 1'b1;
-//         end
-//     end
-// end
+always @(posedge clk_vga) begin
+    if (wr_en) begin
+        if (wr_addr == 19'd479999) begin
+            wr_addr <= 19'd0;
+            rd_addr_offset <= wr_addr_offset;
+            wr_addr_offset <= rd_addr_offset;
+        end
+        else begin
+            wr_addr <= wr_addr + 1'b1;
+        end
+    end
+end
 
 assign video_clk = clk_vga;
-render imgae_render(
+render image_render(
     .clk(clk_100m),
     .clk_vga(clk_vga),
 

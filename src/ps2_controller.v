@@ -18,8 +18,8 @@ reg ps2_clk_1;
 reg ps2_clk_2;
 
 // check the negedge of ps2 clock
-always @(posedge clk or negedge rst) begin
-    if (!rst) begin
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
         ps2_clk_1 <= 1'b1;
         ps2_clk_2 <= 1'b1;
     end
@@ -35,8 +35,8 @@ assign ps2_clk_n = ps2_clk_2 & (!ps2_clk_1);
 reg [3:0] i;
 reg [7:0] tmp;
 
-always @(posedge clk or negedge rst) begin
-    if (!rst) begin
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
         i <= 4'd0;
         tmp <= 8'h00;
     end
@@ -56,8 +56,8 @@ end
 
 reg ps2_f0;
 
-always @(posedge clk or negedge rst) begin
-    if (!rst) begin
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
         ps2_f0 <= 1'b0;
         signal <= 0;
         data <= 2'd0;
