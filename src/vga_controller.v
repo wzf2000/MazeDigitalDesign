@@ -48,13 +48,23 @@ begin
         else begin
             hdata <= 0;
             vdata <= vdata + 1;
-            address <= address + 1'b1;
+            if (vdata < VSIZE - 1) begin
+                address <= address + 1;
+            end
+            else begin
+                address <= address;
+            end
         end
     end
     else begin
         hdata <= hdata + 1;
         vdata <= vdata;
-        address <= address + 1'b1;
+        if (vdata < VSIZE && hdata + 1 < HSIZE) begin
+            address <= address + 1'b1;
+        end
+        else begin
+            address <= address;
+        end
     end
 end
 

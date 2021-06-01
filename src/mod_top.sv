@@ -187,11 +187,16 @@ ps2_controller u_ps2_controller(
 wire [1:0] move_data;
 reg move_en = 0;
 
-reg rd_addr_offset = 1'b0;
-reg wr_addr_offset = 1'b1;
+reg offset_reg = 1'b0;
+wire rd_addr_offset;
+wire wr_addr_offset;
+
+assign rd_addr_offset = offset_reg;
+assign wr_addr_offset = ~offset_reg;
+
 reg wr_en = 1'b0;
 reg [18:0] wr_addr;
-reg [31:0] wr_data;
+wire [31:0] wr_data;
 reg [7:0] image_cnt = 8'd0;
 reg signed [9:0] center_x = unit_size >> 1;
 reg signed [9:0] center_y = unit_size >> 1;
@@ -1185,6 +1190,10 @@ always @ (posedge clk_vga or posedge reset_btn) begin
         dir <= R;
         move_en <= 1'b1;
         state <= INIT_CAM;
+        wr_en <= 1'b0;
+        wr_addr <= 19'b0;
+        pip_en <= 9'b111111111;
+
     end
     else begin
         case (state)
@@ -1243,6 +1252,7 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                 end
                 px[0] <= 10'd0;
                 py[0] <= 10'd0;
+                pip_en <= 9'b111111111;
                 if ((image_cnt == 8'd90 && (draw_mode == LEFT || draw_mode == RIGHT)) || (image_cnt == unit_size && draw_mode == MOVE)) begin
                     image_cnt <= 8'd0;
                     state <= STILL;
@@ -1373,8 +1383,8 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                 if (pip_en[0] == 1'b1) begin // 激活
                     if (px[0] == width) begin
                         pip_en[0] <= 1'b1;
-                        px[0] <= px[0];
-                        py[0] <= py[0];
+                        px[0] <= width;
+                        py[0] <= height;
                     end
                     else begin
                         pip_en[0] <= 1'b0;
@@ -1396,15 +1406,15 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                         px[0] <= 10'd0;
                         py[0] <= py[0] + 1;
                         ray_dir[0] <= -400;
-                        ray_dir[1] <= 149 - (py[0] >> 1);
+                        ray_dir[1] <= 299 - (py[0] >> 1);
                         ray_dir[2] <= 511;
                     end
                     else begin
                         pip_en[0] <= 1'b0;
                         px[0] <= px[0] + 1;
                         py[0] <= py[0];
-                        ray_dir[0] <= (px[0] >> 1) - 200;
-                        ray_dir[1] <= 149 - (py[0] >> 1);
+                        ray_dir[0] <= (px[0] >> 1) - 400;
+                        ray_dir[1] <= 300 - (py[0] >> 1);
                         ray_dir[2] <= 511;
                     end
                 end
@@ -1499,9 +1509,12 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                 if (pip_en[7] == 1'b0) begin
                     // do set_pixel
                     wr_en <= 1'b1;
-                    red <= phone[0];
-                    green <= phone[1];
-                    blue <= phone[2];
+                    // red <= phone[0];
+                    // green <= phone[1];
+                    // blue <= phone[2];
+                    red <= px[6];
+                    green <= 100;
+                    blue <= 100;
                 end
                 else begin
                     // stay
@@ -1518,6 +1531,18 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                 else begin
                     state <= DRAW;
                 end
+
+                if (wr_en) begin
+                    if (wr_addr == 19'd479999) begin
+                        wr_addr <= 19'd0;
+                        offset_reg <= ~offset_reg;
+                        // rd_addr_offset <= !rd_addr_offset;
+                        // wr_addr_offset <= !wr_addr_offset;
+                    end
+                    else begin
+                        wr_addr <= wr_addr + 1'b1;
+                    end
+                end
             end
             default:;
         endcase        
@@ -1525,23 +1550,25 @@ always @ (posedge clk_vga or posedge reset_btn) begin
     
 end
 
-always @(posedge clk_vga) begin
-    if (wr_en) begin
-        if (wr_addr == 19'd479999) begin
-            wr_addr <= 19'd0;
-            rd_addr_offset <= wr_addr_offset;
-            wr_addr_offset <= rd_addr_offset;
-        end
-        else begin
-            wr_addr <= wr_addr + 1'b1;
-        end
-    end
-end
+// always @(posedge clk_vga) begin
+//     if (wr_en) begin
+//         if (wr_addr == 19'd479999) begin
+//             wr_addr <= 19'd0;
+//             offset_reg <= ~offset_reg;
+//             // rd_addr_offset <= !rd_addr_offset;
+//             // wr_addr_offset <= !wr_addr_offset;
+//         end
+//         else begin
+//             wr_addr <= wr_addr + 1'b1;
+//         end
+//     end
+// end
 
 assign video_clk = clk_vga;
 render image_render(
     .clk(clk_100m),
     .clk_vga(clk_vga),
+    .clk_50m(clk_ps2),
 
     .ram_data(base_ram_data),
     .ram_addr(base_ram_addr),

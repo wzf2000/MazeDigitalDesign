@@ -1,6 +1,7 @@
 module render (
     input wire clk,
     input wire clk_vga,
+    input wire clk_50m,
 
     inout wire [31:0] ram_data,
     output wire [19:0] ram_addr,
@@ -49,7 +50,7 @@ sram_controller sram_controller0 (
 
 
 vga_controller #(12, 800, 856, 976, 1040, 600, 637, 643, 666, 1, 1) vga800x600at75 (
-    .clk(clk_vga), 
+    .clk(clk_50m), 
     .hdata(hdata), //横坐标
     .vdata(vdata), //纵坐标
     .address(rd_address),
