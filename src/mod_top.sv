@@ -1175,342 +1175,353 @@ assign wr_data = {{8{1'b0}}, red, green, blue};
 
 // main states
 always @ (posedge clk_vga or posedge reset_n) begin
-    case (state)
-        STILL: begin
-            if (!move_en && signal) begin
-                case (move_data)
-                    MOVE: begin
-                        case (dir)
-                            U: begin
-                                if (x > 3'd0 && !maze[x - 1][y]) begin
-                                    draw_mode <= move_data;
-                                    state <= INIT_CAM;
-                                    image_cnt <= 8'd0;
+    if (reset_n) begin
+        draw_mode <= RIGHT;
+        image_cnt <= 8'd89;
+        center_angle <= 9'd179;
+        center_x, center_y, center_z <= {10'd32, 10'd32, 10'd32};
+        move_en <= 1'b1;
+        state <= INIT_CAM;
+    end
+    else begin
+        case (state)
+            STILL: begin
+                if (!move_en && signal) begin
+                    case (move_data)
+                        MOVE: begin
+                            case (dir)
+                                U: begin
+                                    if (x > 3'd0 && !maze[x - 1][y]) begin
+                                        draw_mode <= move_data;
+                                        state <= INIT_CAM;
+                                        image_cnt <= 8'd0;
+                                    end
                                 end
-                            end
-                            L: begin
-                                if (y > 3'd0 && !maze[x][y - 1]) begin
-                                    draw_mode <= move_data;
-                                    state <= INIT_CAM;
-                                    image_cnt <= 8'd0;
+                                L: begin
+                                    if (y > 3'd0 && !maze[x][y - 1]) begin
+                                        draw_mode <= move_data;
+                                        state <= INIT_CAM;
+                                        image_cnt <= 8'd0;
+                                    end
                                 end
-                            end
-                            D: begin
-                                if (x < 3'd4 && !maze[x + 1][y]) begin
-                                    draw_mode <= move_data;
-                                    state <= INIT_CAM;
-                                    image_cnt <= 8'd0;
+                                D: begin
+                                    if (x < 3'd4 && !maze[x + 1][y]) begin
+                                        draw_mode <= move_data;
+                                        state <= INIT_CAM;
+                                        image_cnt <= 8'd0;
+                                    end
                                 end
-                            end
-                            R: begin
-                                if (y < 3'd4 && !maze[x][y + 1]) begin
-                                    draw_mode <= move_data;
-                                    state <= INIT_CAM;
-                                    image_cnt <= 8'd0;
+                                R: begin
+                                    if (y < 3'd4 && !maze[x][y + 1]) begin
+                                        draw_mode <= move_data;
+                                        state <= INIT_CAM;
+                                        image_cnt <= 8'd0;
+                                    end
                                 end
-                            end
-                        endcase
-                    end
-                    LEFT, RIGHT: begin
-                        draw_mode <= move_data;
-                        state <= INIT_CAM;
-                        image_cnt <= 8'd0;
-                    end
-                    default: state <= state;
-                endcase
-                move_en <= 1'b1;
-            end
-            else if (!signal) begin
-                move_en <= 1'b0;
-            end
-        end
-        INIT_CAM: begin
-            //INIT_CAM
-            if (!signal) begin
-                move_en <= 1'b0;
-            end
-            px[0] <= 10'd0;
-            py[0] <= 10'd0;
-            if ((image_cnt == 8'd90 && (draw_mode == LEFT || draw_mode == RIGHT)) || (image_cnt == unit_size && draw_mode == MOVE)) begin
-                image_cnt <= 8'd0;
-                state <= STILL;
-                case (draw_mode)
-                    MOVE:
-                        case (dir)
-                            U: begin
-                                if (x > 3'd0 && !maze[x - 1][y])
-                                    x <= x - 1;
-                            end
-                            L: begin
-                                if (y > 3'd0 && !maze[x][y - 1])
-                                    y <= y - 1;
-                            end
-                            D: begin
-                                if (x < 3'd4 && !maze[x + 1][y])
-                                    x <= x + 1;
-                            end
-                            R: begin
-                                if (y < 3'd4 && !maze[x][y + 1])
-                                    y <= y + 1;
-                            end
-                        endcase
-                    LEFT, RIGHT:
-                        case (dir)
-                            U: begin
-                                if (draw_mode == LEFT)
-                                    dir <= L;
-                                else
-                                    dir <= R;
-                            end
-                            L: begin
-                                if (draw_mode == LEFT)
-                                    dir <= D;
-                                else
-                                    dir <= U;
-                            end
-                            D: begin
-                                if (draw_mode == LEFT)
-                                    dir <= R;
-                                else
-                                    dir <= L;
-                            end
-                            R: begin
-                                if (draw_mode == LEFT)
-                                    dir <= U;
-                                else
-                                    dir <= D;
-                            end
                             endcase
-                endcase
+                        end
+                        LEFT, RIGHT: begin
+                            draw_mode <= move_data;
+                            state <= INIT_CAM;
+                            image_cnt <= 8'd0;
+                        end
+                        default: state <= state;
+                    endcase
+                    move_en <= 1'b1;
+                end
+                else if (!signal) begin
+                    move_en <= 1'b0;
+                end
             end
-            else begin
-                image_cnt <= image_cnt + 1'b1;
-                state <= state;
-                case (draw_mode)
-                    MOVE:
-                        case (dir)
-                            U: begin
-                                center_x <= center_x - 1;
-                                center_y <= center_y;
-                            end
-                            L: begin
-                                center_x <= center_x;
-                                center_y <= center_y - 1;
-                            end
-                            D: begin
-                                center_x <= center_x + 1;
-                                center_y <= center_y;
-                            end
-                            R: begin
-                                center_x <= center_x;
-                                center_y <= center_y + 1;
-                            end
-                        endcase
-                    LEFT: begin
-                        if (center_angle == 9'd0)
-                            center_angle <= 9'd359;
-                        else
-                            center_angle <= center_angle - 1;
+            INIT_CAM: begin
+                //INIT_CAM
+                if (!signal) begin
+                    move_en <= 1'b0;
+                end
+                px[0] <= 10'd0;
+                py[0] <= 10'd0;
+                if ((image_cnt == 8'd90 && (draw_mode == LEFT || draw_mode == RIGHT)) || (image_cnt == unit_size && draw_mode == MOVE)) begin
+                    image_cnt <= 8'd0;
+                    state <= STILL;
+                    case (draw_mode)
+                        MOVE:
+                            case (dir)
+                                U: begin
+                                    if (x > 3'd0 && !maze[x - 1][y])
+                                        x <= x - 1;
+                                end
+                                L: begin
+                                    if (y > 3'd0 && !maze[x][y - 1])
+                                        y <= y - 1;
+                                end
+                                D: begin
+                                    if (x < 3'd4 && !maze[x + 1][y])
+                                        x <= x + 1;
+                                end
+                                R: begin
+                                    if (y < 3'd4 && !maze[x][y + 1])
+                                        y <= y + 1;
+                                end
+                            endcase
+                        LEFT, RIGHT:
+                            case (dir)
+                                U: begin
+                                    if (draw_mode == LEFT)
+                                        dir <= L;
+                                    else
+                                        dir <= R;
+                                end
+                                L: begin
+                                    if (draw_mode == LEFT)
+                                        dir <= D;
+                                    else
+                                        dir <= U;
+                                end
+                                D: begin
+                                    if (draw_mode == LEFT)
+                                        dir <= R;
+                                    else
+                                        dir <= L;
+                                end
+                                R: begin
+                                    if (draw_mode == LEFT)
+                                        dir <= U;
+                                    else
+                                        dir <= D;
+                                end
+                                endcase
+                    endcase
+                end
+                else begin
+                    image_cnt <= image_cnt + 1'b1;
+                    state <= state;
+                    case (draw_mode)
+                        MOVE:
+                            case (dir)
+                                U: begin
+                                    center_x <= center_x - 1;
+                                    center_y <= center_y;
+                                end
+                                L: begin
+                                    center_x <= center_x;
+                                    center_y <= center_y - 1;
+                                end
+                                D: begin
+                                    center_x <= center_x + 1;
+                                    center_y <= center_y;
+                                end
+                                R: begin
+                                    center_x <= center_x;
+                                    center_y <= center_y + 1;
+                                end
+                            endcase
+                        LEFT: begin
+                            if (center_angle == 9'd0)
+                                center_angle <= 9'd359;
+                            else
+                                center_angle <= center_angle - 1;
+                        end
+                        RIGHT: begin
+                            if (center_angle == 9'd359)
+                                center_angle <= 9'd0;
+                            else
+                                center_angle <= center_angle + 1;
+                        end
+                    endcase
+                    dir_x <= Dir_x[center_angle];
+                    dir_y <= Dir_y[center_angle];
+                end
+                state <= DRAW;
+            end
+            DRAW: begin
+                // 流水线
+                if (!signal) begin
+                    move_en <= 1'b0;
+                end
+                px[1] <= px[0];
+                px[2] <= px[1];
+                px[3] <= px[2];
+                px[4] <= px[3];
+                px[5] <= px[4];
+                px[6] <= px[5];
+                px[7] <= px[6];
+                px[8] <= px[7];
+
+                py[1] <= py[0];
+                py[2] <= py[1];
+                py[3] <= py[2];
+                py[4] <= py[3];
+                py[5] <= py[4];
+                py[6] <= py[5];
+                px[7] <= px[6];
+                px[8] <= px[7];
+
+                pip_en[1] <= pip_en[0];
+                pip_en[2] <= pip_en[1];
+                pip_en[3] <= pip_en[2];
+                pip_en[4] <= pip_en[3];
+                pip_en[5] <= pip_en[4];
+                pip_en[6] <= pip_en[5];
+                pip_en[7] <= pip_en[6];
+                pip_en[8] <= pip_en[7];
+
+                ray_dir_R[1] <= ray_dir_R[0];
+
+                // GEN_RAY 1
+                if (pip_en[0] == 1'b1) begin // 激活
+                    if (px[0] == width) begin
+                        pip_en[0] <= 1'b1;
+                        px[0] <= px[0];
+                        py[0] <= py[0];
                     end
-                    RIGHT: begin
-                        if (center_angle == 9'd359)
-                            center_angle <= 9'd0;
-                        else
-                            center_angle <= center_angle + 1;
+                    else begin
+                        pip_en[0] <= 1'b0;
+                        px[0] <= 10'd0;
+                        py[0] <= 10'd0;
+                        ray_dir[0] <= -400;
+                        ray_dir[1] <= 300;
+                        ray_dir[2] <= 511;
                     end
-                endcase
-                dir_x <= Dir_x[center_angle];
-                dir_y <= Dir_y[center_angle];
-            end
-            state <= DRAW;
-        end
-        DRAW: begin
-            // 流水线
-            if (!signal) begin
-                move_en <= 1'b0;
-            end
-            px[1] <= px[0];
-            px[2] <= px[1];
-            px[3] <= px[2];
-            px[4] <= px[3];
-            px[5] <= px[4];
-            px[6] <= px[5];
-            px[7] <= px[6];
-            px[8] <= px[7];
-
-            py[1] <= py[0];
-            py[2] <= py[1];
-            py[3] <= py[2];
-            py[4] <= py[3];
-            py[5] <= py[4];
-            py[6] <= py[5];
-            px[7] <= px[6];
-            px[8] <= px[7];
-
-            pip_en[1] <= pip_en[0];
-            pip_en[2] <= pip_en[1];
-            pip_en[3] <= pip_en[2];
-            pip_en[4] <= pip_en[3];
-            pip_en[5] <= pip_en[4];
-            pip_en[6] <= pip_en[5];
-            pip_en[7] <= pip_en[6];
-            pip_en[8] <= pip_en[7];
-
-            ray_dir_R[1] <= ray_dir_R[0];
-
-            // GEN_RAY 1
-            if (pip_en[0] == 1'b1) begin // 激活
-                if (px[0] == width) begin
-                    pip_en[0] <= 1'b1;
-                    px[0] <= px[0];
-                    py[0] <= py[0];
                 end
                 else begin
-                    pip_en[0] <= 1'b0;
-                    px[0] <= 10'd0;
-                    py[0] <= 10'd0;
-                    ray_dir[0] <= -400;
-                    ray_dir[1] <= 300;
-                    ray_dir[2] <= 511;
+                    if (px[0] == width - 1 && py[0] == height - 1) begin
+                        pip_en[0] <= 1'b1;
+                        px[0] <= width;
+                        py[0] <= height;
+                    end
+                    else if (px[0] == width - 1) begin
+                        pip_en[0] <= 1'b0;
+                        px[0] <= 10'd0;
+                        py[0] <= py[0] + 1;
+                        ray_dir[0] <= -400;
+                        ray_dir[1] <= 149 - (py[0] >> 1);
+                        ray_dir[2] <= 511;
+                    end
+                    else begin
+                        pip_en[0] <= 1'b0;
+                        px[0] <= px[0] + 1;
+                        py[0] <= py[0];
+                        ray_dir[0] <= (px[0] >> 1) - 200;
+                        ray_dir[1] <= 149 - (py[0] >> 1);
+                        ray_dir[2] <= 511;
+                    end
                 end
-            end
-            else begin
-                if (px[0] == width - 1 && py[0] == height - 1) begin
-                    pip_en[0] <= 1'b1;
-                    px[0] <= width;
-                    py[0] <= height;
-                end
-                else if (px[0] == width - 1) begin
-                    pip_en[0] <= 1'b0;
-                    px[0] <= 10'd0;
-                    py[0] <= py[0] + 1;
-                    ray_dir[0] <= -400;
-                    ray_dir[1] <= 149 - (py[0] >> 1);
-                    ray_dir[2] <= 511;
-                end
-                else begin
-                    pip_en[0] <= 1'b0;
-                    px[0] <= px[0] + 1;
-                    py[0] <= py[0];
-                    ray_dir[0] <= (px[0] >> 1) - 200;
-                    ray_dir[1] <= 149 - (py[0] >> 1);
-                    ray_dir[2] <= 511;
-                end
-            end
 
-            // GEN_RAY 2
-            if (pip_en[0] == 1'b0) begin
-                // do GEN_RAY
-                {ray_dir_R[0][0], tmp[0]} <= ray_dir[0] * hor_x
-                                           + ray_dir[2] * dir_x;
-                {ray_dir_R[0][1], tmp[1]} <= ray_dir[0] * hor_y
-                                           + ray_dir[2] * dir_y;
-                ray_dir_R[0][2] <= ray_dir[1] / 2;
-            end
-            else begin
-                // stay
-            end
-
-            // INTERSECT 1
-            if (pip_en[1] == 1'b0) begin
-                // do intersect
-            end
-            else begin
-                // stay
-            end
-
-            // INTERSECT 2
-            if (pip_en[2] == 1'b0) begin
-                // do intersect
-            end
-            else begin
-                // stay
-            end
-
-            // INTERSECT 3
-            if (pip_en[3] == 1'b0) begin
-                // do intersect
-            end
-            else begin
-                // stay
-            end
-
-            // INTERSECT 4
-            if (pip_en[4] == 1'b0) begin
-                // do intersect
-            end
-            else begin
-                // stay
-            end
-
-            // PHONG 1
-            if (pip_en[5] == 1'b0) begin
-                // do phong
-                integer i;
-                integer j;
-                if (rev) begin
-                    for (i = 0; i < 4; i = i + 1)
-                        for (j = 0; j < 3; j = j + 1)
-                            single_shade[i][j] <= light_color[i][j] ? -dir_to_light[j][normal_dir] : 0;
+                // GEN_RAY 2
+                if (pip_en[0] == 1'b0) begin
+                    // do GEN_RAY
+                    {ray_dir_R[0][0], tmp[0]} <= ray_dir[0] * hor_x
+                                            + ray_dir[2] * dir_x;
+                    {ray_dir_R[0][1], tmp[1]} <= ray_dir[0] * hor_y
+                                            + ray_dir[2] * dir_y;
+                    ray_dir_R[0][2] <= ray_dir[1] / 2;
                 end
                 else begin
-                    for (i = 0; i < 4; i = i + 1)
-                        for (j = 0; j < 3; j = j + 1)
-                            single_shade[i][j] <= light_color[i][j] ? dir_to_light[j][normal_dir] : 0;
+                    // stay
                 end
-            end
-            else begin
-                // stay
-            end
 
-            // PHONG 2
-            if (pip_en[6] == 1'b0) begin
-                // do phong
-                if (outp_en) begin
-                    phone[0] <= 8'd0;
-                    phone[1] <= 8'd0;
-                    phone[2] <= 8'd102;
+                // INTERSECT 1
+                if (pip_en[1] == 1'b0) begin
+                    // do intersect
                 end
                 else begin
+                    // stay
+                end
+
+                // INTERSECT 2
+                if (pip_en[2] == 1'b0) begin
+                    // do intersect
+                end
+                else begin
+                    // stay
+                end
+
+                // INTERSECT 3
+                if (pip_en[3] == 1'b0) begin
+                    // do intersect
+                end
+                else begin
+                    // stay
+                end
+
+                // INTERSECT 4
+                if (pip_en[4] == 1'b0) begin
+                    // do intersect
+                end
+                else begin
+                    // stay
+                end
+
+                // PHONG 1
+                if (pip_en[5] == 1'b0) begin
+                    // do phong
                     integer i;
-                    for (i = 0; i < 3; i = i + 1)
-                        phone[i] <= (single_shade[0][i][9] ? 0 : single_shade[0][i][8:2])
-                                  + (single_shade[1][i][9] ? 0 : single_shade[1][i][8:2])
-                                  + (single_shade[2][i][9] ? 0 : single_shade[2][i][8:2])
-                                  + (single_shade[3][i][9] ? 0 : single_shade[3][i][8:2]);
+                    integer j;
+                    if (rev) begin
+                        for (i = 0; i < 4; i = i + 1)
+                            for (j = 0; j < 3; j = j + 1)
+                                single_shade[i][j] <= light_color[i][j] ? -dir_to_light[j][normal_dir] : 0;
+                    end
+                    else begin
+                        for (i = 0; i < 4; i = i + 1)
+                            for (j = 0; j < 3; j = j + 1)
+                                single_shade[i][j] <= light_color[i][j] ? dir_to_light[j][normal_dir] : 0;
+                    end
+                end
+                else begin
+                    // stay
+                end
+
+                // PHONG 2
+                if (pip_en[6] == 1'b0) begin
+                    // do phong
+                    if (outp_en) begin
+                        phone[0] <= 8'd0;
+                        phone[1] <= 8'd0;
+                        phone[2] <= 8'd102;
+                    end
+                    else begin
+                        integer i;
+                        for (i = 0; i < 3; i = i + 1)
+                            phone[i] <= (single_shade[0][i][9] ? 0 : single_shade[0][i][8:2])
+                                    + (single_shade[1][i][9] ? 0 : single_shade[1][i][8:2])
+                                    + (single_shade[2][i][9] ? 0 : single_shade[2][i][8:2])
+                                    + (single_shade[3][i][9] ? 0 : single_shade[3][i][8:2]);
+                    end
+                end
+                else begin
+                    // stay
+                end
+
+                // SET_PIXEL
+                if (pip_en[7] == 1'b0) begin
+                    // do set_pixel
+                    wr_en <= 1'b1;
+                    red <= phone[0];
+                    green <= phone[1];
+                    blue <= phone[2];
+                    wr_addr <= width * py[6] + px[6];
+                end
+                else begin
+                    // stay
+                    wr_en <= 1'b0;
+                end
+
+                // back to init_cam
+                if (pip_en[8] == 1'b0) begin
+                    state <= DRAW;
+                end
+                else if (px[8] == width) begin
+                    state <= INIT_CAM;
+                end
+                else begin
+                    state <= DRAW;
                 end
             end
-            else begin
-                // stay
-            end
-
-            // SET_PIXEL
-            if (pip_en[7] == 1'b0) begin
-                // do set_pixel
-                wr_en <= 1'b1;
-                red <= phone[0];
-                green <= phone[1];
-                blue <= phone[2];
-                wr_addr <= width * py[6] + px[6];
-            end
-            else begin
-                // stay
-                wr_en <= 1'b0;
-            end
-
-            // back to init_cam
-            if (pip_en[8] == 1'b0) begin
-                state <= DRAW;
-            end
-            else if (px[8] == width) begin
-                state <= INIT_CAM;
-            end
-            else begin
-                state <= DRAW;
-            end
-        end
-        default:;
-    endcase
+            default:;
+        endcase        
+    end
+    
 end
 
 // always @(posedge clk_vga) begin
