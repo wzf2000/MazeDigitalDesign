@@ -12,7 +12,7 @@ module check_valid_ground(
 );
 
 always @(posedge clk) begin
-    if (in_y > 320 || in_y < 0 || in_x > 320 || in_y < 0) begin
+    if (in_y > 320 || in_y < 0 || in_x > 320 || in_x < 0) begin
         out_p <= -1;
         en <= 0;
         out_x <= 10'b1111111111;
