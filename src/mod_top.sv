@@ -200,7 +200,7 @@ wire [31:0] wr_data;
 reg [7:0] image_cnt = 8'd0;
 reg signed [9:0] center_x = unit_size >> 1;
 reg signed [9:0] center_y = unit_size >> 1;
-reg signed [9:0] center_z = unit_size >> 1;
+reg signed [9:0] center_z = 48;
 reg [8:0] center_angle = 9'd180;
 localparam signed [0:359][9:0] Dir_x = {
     10'b1000000000,
@@ -1178,13 +1178,18 @@ reg [7:0] green;
 reg [7:0] blue;
 assign wr_data = {{8{1'b0}}, red, green, blue};
 
+reg [31:0] debug/*synthesis noprune*/;
+reg [31:0] debug_2/*synthesis noprune*/;
+reg [31:0] debug_3/*synthesis noprune*/;
+reg [31:0] debug_4/*synthesis noprune*/;
+
 // main states
 always @ (posedge clk_vga or posedge reset_btn) begin
     if (reset_btn) begin
         draw_mode <= RIGHT;
         image_cnt <= 8'd89;
         center_angle <= 9'd179;
-        {center_x, center_y, center_z} <= {10'd32, 10'd32, 10'd32};
+        {center_x, center_y} <= {10'd32, 10'd32};
         x <= 3'd0;
         y <= 3'd0;
         dir <= R;
@@ -1439,13 +1444,25 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                 if (pip_en[0] == 1'b0) begin
                     // do GEN_RAY
                     {ray_dir_R[0][0], tmp[0]} <= ray_dir[0] * hor_x
-                                            + ray_dir[2] * dir_x;
+                                               + ray_dir[2] * dir_x;
                     {ray_dir_R[0][1], tmp[1]} <= ray_dir[0] * hor_y
-                                            + ray_dir[2] * dir_y;
+                                               + ray_dir[2] * dir_y;
                     ray_dir_R[0][2] <= -(ray_dir[1] / 2);
                 end
                 else begin
                     // stay
+                end
+                
+                // if (px[2] == 600 && py[2] == 150 && center_angle == 180 && center_x == 32 && center_y == 32) begin
+                //     debug[18:0] <= hor_p_1[0];
+                //     debug_2[9:0] <= ray_dir_R[1][0];
+                //     debug_3[9:0] <= ray_dir_R[1][1];
+                // end
+
+                if (px[3] == 600 && py[3] == 150 && center_angle == 180 && center_x == 32 && center_y == 32) begin
+                    debug[11:0] <= ver_out_1[0][0];
+                    debug_2[11:0] <= ver_out_1[0][1];
+                    debug_3[11:0] <= ver_out_1[0][2];
                 end
 
                 // INTERSECT 1
@@ -1512,9 +1529,9 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                         integer i;
                         for (i = 0; i < 3; i = i + 1)
                             phone[i] <= ((single_shade[0][i][9] ? 0 : single_shade[0][i])
-                                      + (single_shade[1][i][9] ? 0 : single_shade[1][i])
-                                      + (single_shade[2][i][9] ? 0 : single_shade[2][i])
-                                      + (single_shade[3][i][9] ? 0 : single_shade[3][i])) >> 3;
+                                       + (single_shade[1][i][9] ? 0 : single_shade[1][i])
+                                       + (single_shade[2][i][9] ? 0 : single_shade[2][i])
+                                       + (single_shade[3][i][9] ? 0 : single_shade[3][i])) >> 3;
                     end
                 end
                 else begin

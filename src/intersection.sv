@@ -524,9 +524,11 @@ localparam [0:511][8:0] inverse = {
 
 wire less;
 wire sign;
+wire signed [9:0] abs_dir;
 
 assign less = (wall << 6) < ori;
 assign sign = dir[9] ^ less;
+assign abs_dir = dir[9] ? -dir : dir;
 
 always @(posedge clk) begin
     if (dir[8:0] == 10'd0) begin
@@ -537,7 +539,7 @@ always @(posedge clk) begin
             p <= 19'b1111111111111111111;
         else begin
             p[18] <= 1'b0;
-            p[17:0] <= ((less ? (ori - (wall << 6)) : ((wall << 6) - ori)) * inverse[dir[8:0]]) >> 1;
+            p[17:0] <= ((less ? (ori - (wall << 6)) : ((wall << 6) - ori)) * inverse[abs_dir[8:0]]) >> 1;
         end
     end
 end
