@@ -1,4 +1,6 @@
-module check_valid(
+module check_valid
+#(parameter Z = 0)
+(
     input wire clk,
     input wire [4:0] wall,
     input wire [9:0] in_p,
@@ -33,7 +35,7 @@ always @(posedge clk) begin
             en <= 1;
             out_x <= {in_x[11], in_x[8:0]};
             out_y <= {in_y[11], in_y[8:0]};
-            out_z <= {in_z[11], in_z[8:0]};
+            out_z <= (Z << 6);
         end
     end
 end

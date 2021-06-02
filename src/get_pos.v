@@ -23,9 +23,9 @@ always @(posedge clk) begin
     end
     else begin
         out_p <= p[9:0];
-        {out_x, tmp[0]} <= dir_x * p[9:0] + (ori_x << 8);
-        {out_y, tmp[1]} <= dir_y * p[9:0] + (ori_y << 8);
-        {out_z, tmp[2]} <= dir_z * p[9:0] + (ori_z << 8);
+        {out_x, tmp[0]} <= dir_x * p[9:0] + {ori_x, 8'b0};
+        {out_y, tmp[1]} <= dir_y * p[9:0] + {ori_y, 8'b0};
+        {out_z, tmp[2]} <= dir_z * p[9:0] + {ori_z, 8'b0};
     end
 end
 

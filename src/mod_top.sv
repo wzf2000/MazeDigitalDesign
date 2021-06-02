@@ -195,7 +195,7 @@ assign rd_addr_offset = offset_reg[0];
 assign wr_addr_offset = ~offset_reg[0];
 
 reg wr_en = 1'b0;
-reg [18:0] wr_addr;
+reg [18:0] wr_addr = 19'b0;
 wire [31:0] wr_data;
 reg [7:0] image_cnt = 8'd0;
 reg signed [9:0] center_x = unit_size >> 1;
@@ -992,7 +992,7 @@ generate
             .out_z(hor_out_1[xx][2]),
             .out_p(hor_p_2[xx])
         );
-        check_valid checker_x(
+        check_valid #(xx) checker_x(
             .clk(clk_vga),
             .wall(hor_wall[xx]),
             .in_p(hor_p_2[xx]),
@@ -1031,7 +1031,7 @@ generate
             .out_z(ver_out_1[yy][2]),
             .out_p(ver_p_2[yy])
         );
-        check_valid checker_y(
+        check_valid #(yy) checker_y(
             .clk(clk_vga),
             .wall(ver_wall[yy]),
             .in_p(ver_p_2[yy]),
@@ -1169,7 +1169,7 @@ get_min miner(
     .dir_to_light_3_z(dir_to_light[3][2])
 );
 
-localparam [0:3][2:0] light_color = {2'b100, 2'b010, 2'b001, 2'b111};
+localparam [0:3][2:0] light_color = {3'b111, 3'b111, 3'b111, 3'b111};
 reg signed [9:0] single_shade[3:0][2:0];
 reg [7:0] phone[2:0];
 
@@ -1191,7 +1191,7 @@ always @ (posedge clk_vga or posedge reset_btn) begin
         move_en <= 1'b1;
         state <= INIT_CAM;
         wr_en <= 1'b0;
-        wr_addr <= 19'b0;
+        // wr_addr <= 19'b0;
         pip_en <= 9'b111111111;
     end
     else begin
@@ -1250,8 +1250,25 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                     move_en <= 1'b0;
                 end
                 px[0] <= 10'd0;
-                py[0] <= 10'd0;
+                px[1] <= 10'd0;
+                px[2] <= 10'd0;
+                px[3] <= 10'd0;
+                px[4] <= 10'd0;
+                px[5] <= 10'd0;
+                px[6] <= 10'd0;
+                px[7] <= 10'd0;
+                px[8] <= 10'd0;
+                py[0] <= height - 1;
+                py[1] <= height - 1;
+                py[2] <= height - 1;
+                py[3] <= height - 1;
+                py[4] <= height - 1;
+                py[5] <= height - 1;
+                py[6] <= height - 1;
+                py[7] <= height - 1;
+                py[8] <= height - 1;
                 pip_en <= 9'b111111111;
+                wr_en <= 1'b0;
                 if ((image_cnt == 8'd90 && (draw_mode == LEFT || draw_mode == RIGHT)) || (image_cnt == unit_size && draw_mode == MOVE)) begin
                     image_cnt <= 8'd0;
                     state <= STILL;
@@ -1364,8 +1381,8 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                 py[4] <= py[3];
                 py[5] <= py[4];
                 py[6] <= py[5];
-                px[7] <= px[6];
-                px[8] <= px[7];
+                py[7] <= py[6];
+                py[8] <= py[7];
 
                 pip_en[1] <= pip_en[0];
                 pip_en[2] <= pip_en[1];
@@ -1388,14 +1405,14 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                     else begin
                         pip_en[0] <= 1'b0;
                         px[0] <= 10'd0;
-                        py[0] <= 10'd0;
-                        ray_dir[0] <= -400;
-                        ray_dir[1] <= 300;
+                        py[0] <= height - 1;
+                        ray_dir[0] <= -200;
+                        ray_dir[1] <= -150;
                         ray_dir[2] <= 511;
                     end
                 end
                 else begin
-                    if (px[0] == width - 1 && py[0] == height - 1) begin
+                    if (px[0] == width - 1 && py[0] == 0) begin
                         pip_en[0] <= 1'b1;
                         px[0] <= width;
                         py[0] <= height;
@@ -1403,9 +1420,9 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                     else if (px[0] == width - 1) begin
                         pip_en[0] <= 1'b0;
                         px[0] <= 10'd0;
-                        py[0] <= py[0] + 1;
-                        ray_dir[0] <= -400;
-                        ray_dir[1] <= 149 - (py[0] >> 1);
+                        py[0] <= py[0] - 1;
+                        ray_dir[0] <= -200;
+                        ray_dir[1] <= 150 - (py[0] >> 1);
                         ray_dir[2] <= 511;
                     end
                     else begin
@@ -1471,12 +1488,12 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                     if (rev) begin
                         for (i = 0; i < 4; i = i + 1)
                             for (j = 0; j < 3; j = j + 1)
-                                single_shade[i][j] <= light_color[i][j] ? -dir_to_light[j][normal_dir] : 0;
+                                single_shade[i][j] <= light_color[i][j] ? -dir_to_light[i][normal_dir] : 0;
                     end
                     else begin
                         for (i = 0; i < 4; i = i + 1)
                             for (j = 0; j < 3; j = j + 1)
-                                single_shade[i][j] <= light_color[i][j] ? dir_to_light[j][normal_dir] : 0;
+                                single_shade[i][j] <= light_color[i][j] ? dir_to_light[i][normal_dir] : 0;
                     end
                 end
                 else begin
@@ -1494,10 +1511,10 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                     else begin
                         integer i;
                         for (i = 0; i < 3; i = i + 1)
-                            phone[i] <= (single_shade[0][i][9] ? 0 : single_shade[0][i][8:2])
-                                      + (single_shade[1][i][9] ? 0 : single_shade[1][i][8:2])
-                                      + (single_shade[2][i][9] ? 0 : single_shade[2][i][8:2])
-                                      + (single_shade[3][i][9] ? 0 : single_shade[3][i][8:2]);
+                            phone[i] <= ((single_shade[0][i][9] ? 0 : single_shade[0][i])
+                                      + (single_shade[1][i][9] ? 0 : single_shade[1][i])
+                                      + (single_shade[2][i][9] ? 0 : single_shade[2][i])
+                                      + (single_shade[3][i][9] ? 0 : single_shade[3][i])) >> 3;
                     end
                 end
                 else begin
