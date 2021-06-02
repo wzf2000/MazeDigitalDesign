@@ -187,12 +187,12 @@ ps2_controller u_ps2_controller(
 wire [1:0] move_data;
 reg move_en = 0;
 
-reg offset_reg = 1'b0;
+reg [31:0] offset_reg = 1'b0;
 wire rd_addr_offset;
 wire wr_addr_offset;
 
-assign rd_addr_offset = offset_reg;
-assign wr_addr_offset = ~offset_reg;
+assign rd_addr_offset = offset_reg[0];
+assign wr_addr_offset = ~offset_reg[0];
 
 reg wr_en = 1'b0;
 reg [18:0] wr_addr;
@@ -381,11 +381,11 @@ localparam signed [0:359][9:0] Dir_x = {
     10'b0111111110,
     10'b0111111111,
     10'b0111111111,
-    10'b1000000000,
-    10'b1000000000,
-    10'b1000000000,
-    10'b1000000000,
-    10'b1000000000,
+    10'b0111111111,
+    10'b0111111111,
+    10'b0111111111,
+    10'b0111111111,
+    10'b0111111111,
     10'b0111111111,
     10'b0111111111,
     10'b0111111110,
@@ -653,11 +653,11 @@ localparam signed [0:359][9:0] Dir_y = {
     10'b0111111110,
     10'b0111111111,
     10'b0111111111,
-    10'b1000000000,
-    10'b1000000000,
-    10'b1000000000,
-    10'b1000000000,
-    10'b1000000000,
+    10'b0111111111,
+    10'b0111111111,
+    10'b0111111111,
+    10'b0111111111,
+    10'b0111111111,
     10'b0111111111,
     10'b0111111111,
     10'b0111111110,
@@ -946,15 +946,15 @@ reg signed [9:0] ray_dir_R[1:0][2:0]; // * 2 ^ 8
 wire signed [18:0] hor_p_1[5:0];
 wire signed [18:0] ver_p_1[5:0];
 wire signed [18:0] ground_1;
-wire signed [9:0] hor_p_2[5:0];
-wire signed [9:0] ver_p_2[5:0];
-wire signed [9:0] ground_2;
-wire signed [9:0] hor_p_3[5:0];
-wire signed [9:0] ver_p_3[5:0];
-wire signed [9:0] ground_3;
-wire signed [17:0] hor_out_1[5:0][2:0];
-wire signed [17:0] ver_out_1[5:0][2:0];
-wire signed [17:0] ground_out_1[2:0];
+wire [9:0] hor_p_2[5:0];
+wire [9:0] ver_p_2[5:0];
+wire [9:0] ground_2;
+wire [9:0] hor_p_3[5:0];
+wire [9:0] ver_p_3[5:0];
+wire [9:0] ground_3;
+wire signed [11:0] hor_out_1[5:0][2:0];
+wire signed [11:0] ver_out_1[5:0][2:0];
+wire signed [11:0] ground_out_1[2:0];
 wire signed [9:0] hor_out_2[5:0][2:0];
 wire signed [9:0] ver_out_2[5:0][2:0];
 wire signed [9:0] ground_out_2[2:0];
@@ -981,9 +981,9 @@ generate
         get_pos getter_x(
             .clk(clk_vga),
             .p(hor_p_1[xx]),
-            .ori_x(center_x),
-            .ori_y(center_y),
-            .ori_z(center_z),
+            .ori_x({1'b0, center_x}),
+            .ori_y({1'b0, center_y}),
+            .ori_z({1'b0, center_z}),
             .dir_x(ray_dir_R[1][0]),
             .dir_y(ray_dir_R[1][1]),
             .dir_z(ray_dir_R[1][2]),
@@ -1020,9 +1020,9 @@ generate
         get_pos getter_y(
             .clk(clk_vga),
             .p(ver_p_1[yy]),
-            .ori_x(center_x),
-            .ori_y(center_y),
-            .ori_z(center_z),
+            .ori_x({1'b0, center_x}),
+            .ori_y({1'b0, center_y}),
+            .ori_z({1'b0, center_z}),
             .dir_x(ray_dir_R[1][0]),
             .dir_y(ray_dir_R[1][1]),
             .dir_z(ray_dir_R[1][2]),
@@ -1057,9 +1057,9 @@ intersection #(0) intersection_z(
 get_pos getter_z(
     .clk(clk_vga),
     .p(ground_1),
-    .ori_x(center_x),
-    .ori_y(center_y),
-    .ori_z(center_z),
+    .ori_x({1'b0, center_x}),
+    .ori_y({1'b0, center_y}),
+    .ori_z({1'b0, center_z}),
     .dir_x(ray_dir_R[1][0]),
     .dir_y(ray_dir_R[1][1]),
     .dir_z(ray_dir_R[1][2]),
@@ -1193,7 +1193,6 @@ always @ (posedge clk_vga or posedge reset_btn) begin
         wr_en <= 1'b0;
         wr_addr <= 19'b0;
         pip_en <= 9'b111111111;
-
     end
     else begin
         case (state)
@@ -1341,11 +1340,11 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                                 center_angle <= center_angle + 1;
                         end
                     endcase
-                    dir_x <= Dir_x[center_angle];
-                    dir_y <= Dir_y[center_angle];
                 end
             end
             DRAW: begin
+                dir_x <= Dir_x[center_angle];
+                dir_y <= Dir_y[center_angle];
                 // 流水线
                 if (!signal) begin
                     move_en <= 1'b0;
@@ -1406,15 +1405,15 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                         px[0] <= 10'd0;
                         py[0] <= py[0] + 1;
                         ray_dir[0] <= -400;
-                        ray_dir[1] <= 299 - (py[0] >> 1);
+                        ray_dir[1] <= 149 - (py[0] >> 1);
                         ray_dir[2] <= 511;
                     end
                     else begin
                         pip_en[0] <= 1'b0;
                         px[0] <= px[0] + 1;
                         py[0] <= py[0];
-                        ray_dir[0] <= (px[0] >> 1) - 400;
-                        ray_dir[1] <= 300 - (py[0] >> 1);
+                        ray_dir[0] <= (px[0] >> 1) - 200;
+                        ray_dir[1] <= 150 - (py[0] >> 1);
                         ray_dir[2] <= 511;
                     end
                 end
@@ -1426,7 +1425,7 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                                             + ray_dir[2] * dir_x;
                     {ray_dir_R[0][1], tmp[1]} <= ray_dir[0] * hor_y
                                             + ray_dir[2] * dir_y;
-                    ray_dir_R[0][2] <= ray_dir[1] / 2;
+                    ray_dir_R[0][2] <= -(ray_dir[1] / 2);
                 end
                 else begin
                     // stay
@@ -1487,7 +1486,7 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                 // PHONG 2
                 if (pip_en[6] == 1'b0) begin
                     // do phong
-                    if (outp_en) begin
+                    if (~outp_en) begin
                         phone[0] <= 8'd0;
                         phone[1] <= 8'd0;
                         phone[2] <= 8'd102;
@@ -1496,9 +1495,9 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                         integer i;
                         for (i = 0; i < 3; i = i + 1)
                             phone[i] <= (single_shade[0][i][9] ? 0 : single_shade[0][i][8:2])
-                                    + (single_shade[1][i][9] ? 0 : single_shade[1][i][8:2])
-                                    + (single_shade[2][i][9] ? 0 : single_shade[2][i][8:2])
-                                    + (single_shade[3][i][9] ? 0 : single_shade[3][i][8:2]);
+                                      + (single_shade[1][i][9] ? 0 : single_shade[1][i][8:2])
+                                      + (single_shade[2][i][9] ? 0 : single_shade[2][i][8:2])
+                                      + (single_shade[3][i][9] ? 0 : single_shade[3][i][8:2]);
                     end
                 end
                 else begin
@@ -1509,12 +1508,12 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                 if (pip_en[7] == 1'b0) begin
                     // do set_pixel
                     wr_en <= 1'b1;
-                    // red <= phone[0];
-                    // green <= phone[1];
-                    // blue <= phone[2];
-                    red <= px[6];
-                    green <= 100;
-                    blue <= 100;
+                    red <= phone[0];
+                    green <= phone[1];
+                    blue <= phone[2];
+                    // red <= px[6];
+                    // green <= 100;
+                    // blue <= 100;
                 end
                 else begin
                     // stay
@@ -1535,7 +1534,7 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                 if (wr_en) begin
                     if (wr_addr == 19'd479999) begin
                         wr_addr <= 19'd0;
-                        offset_reg <= ~offset_reg;
+                        offset_reg <= offset_reg + 1;
                         // rd_addr_offset <= !rd_addr_offset;
                         // wr_addr_offset <= !wr_addr_offset;
                     end
@@ -1550,21 +1549,7 @@ always @ (posedge clk_vga or posedge reset_btn) begin
     
 end
 
-// always @(posedge clk_vga) begin
-//     if (wr_en) begin
-//         if (wr_addr == 19'd479999) begin
-//             wr_addr <= 19'd0;
-//             offset_reg <= ~offset_reg;
-//             // rd_addr_offset <= !rd_addr_offset;
-//             // wr_addr_offset <= !wr_addr_offset;
-//         end
-//         else begin
-//             wr_addr <= wr_addr + 1'b1;
-//         end
-//     end
-// end
-
-assign video_clk = clk_vga;
+assign video_clk = clk_ps2;
 render image_render(
     .clk(clk_100m),
     .clk_vga(clk_vga),

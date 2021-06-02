@@ -8,13 +8,13 @@ with open("dir.v", "w") as f:
         x = -np.cos(angle)
         x = x * (2 ** 9)
         x = int(round(x))
-        x = min(x, 512)
+        x = min(x, 511)
         if x < 0:
             x += 1024
         if (i == 359):
-            f.write('\t10\'b{:0>10s}\n'.format(format(x, 'b')))
+            f.write('    10\'b{:0>10s}\n'.format(format(x, 'b')))
         else:
-            f.write('\t10\'b{:0>10s},\n'.format(format(x, 'b')))
+            f.write('    10\'b{:0>10s},\n'.format(format(x, 'b')))
     f.write('};\n')
     f.write('localparam signed [0:359][9:0] Dir_y = {')
     f.write('\n')
@@ -23,11 +23,11 @@ with open("dir.v", "w") as f:
         x = np.sin(angle)
         x = x * (2 ** 9)
         x = int(round(x))
-        x = min(x, 512)
+        x = min(x, 511)
         if x < 0:
             x += 1024
         if (i == 359):
-            f.write('\t10\'b{:0>10s}\n'.format(format(x, 'b')))
+            f.write('    10\'b{:0>10s}\n'.format(format(x, 'b')))
         else:
-            f.write('\t10\'b{:0>10s},\n'.format(format(x, 'b')))
+            f.write('    10\'b{:0>10s},\n'.format(format(x, 'b')))
     f.write('};\n')
