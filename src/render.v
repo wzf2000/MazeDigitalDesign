@@ -43,7 +43,7 @@ sram_controller sram_controller0 (
     .rd_data(rd_data),
     .rd_addr({rd_addr_offset, rd_address}),
 
-    .wr_en(sram_en),
+    .wr_en(sram_wr_en),
     .wr_data(sram_wr_data),
     .wr_addr({wr_addr_offset, sram_wr_addr})
 );
