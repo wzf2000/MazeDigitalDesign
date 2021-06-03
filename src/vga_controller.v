@@ -59,7 +59,7 @@ begin
     else begin
         hdata <= hdata + 1;
         vdata <= vdata;
-        if (vdata == VSIZE - 1 && hdata == HSIZE - 1) begin
+        if (vdata == VSIZE - 1 && hdata == HSIZE - 2) begin
             address <= 0;
         end
         else if (vdata < VSIZE && hdata + 1 < HSIZE) begin

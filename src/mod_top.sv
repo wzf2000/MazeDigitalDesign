@@ -129,14 +129,10 @@ wire [11:0] vdata;  // 当前纵坐标
 // assign video_blue = vdata >= 400 ? hdata[8:1] : 0;
 
 // define maze param
-// 01000
-// 01010
-// 01010
-// 01010
-// 00010
-localparam [0:4][4:0] maze = {5'b00010, 5'b01010, 5'b01010, 5'b01010, 5'b01000};
-localparam [0:5][4:0] hor_wall = {5'b11111, 5'b01000, 5'b00000, 5'b00000, 5'b00010, 5'b11111};
-localparam [0:5][4:0] ver_wall = {5'b11111, 5'b01111, 5'b01111, 5'b11110, 5'b11110, 5'b11111};
+// see maze.txt
+localparam [0:4][4:0] maze = {5'b00000, 5'b10101, 5'b10100, 5'b10011, 5'b00111};
+localparam [0:5][4:0] hor_wall = {5'b11111, 5'b10101, 5'b00001, 5'b00111, 5'b10100, 5'b11111};
+localparam [0:5][4:0] ver_wall = {5'b11111, 5'b00010, 5'b01110, 5'b10110, 5'b01110, 5'b11111};
 //reg [2:0] pos[1:0] = {1'b0, 1'b0};
 
 //define camera param
@@ -1276,6 +1272,7 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                 py[7] <= height - 1;
                 py[8] <= height - 1;
                 pip_en <= 9'b111111111;
+                wr_addr <= 19'b0;
                 wr_en <= 1'b0;
                 if ((image_cnt == 8'd90 && (draw_mode == LEFT || draw_mode == RIGHT)) || (image_cnt == unit_size && draw_mode == MOVE)) begin
                     image_cnt <= 8'd0;

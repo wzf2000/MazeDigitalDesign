@@ -28,8 +28,8 @@ always @(posedge clk_100m) begin
     case (state)
         2'd0: begin
             ram_addr <= rd_addr;
-            ram_oe_n <= rd_addr[0];
-            // ram_oe_n <= 1'b0;
+            // ram_oe_n <= rd_addr[0];
+            ram_oe_n <= 1'b0;
             ram_we_n <= 1'b1;
             // ram_we_n <= ~wr_en;
             state <= 2'd1;
