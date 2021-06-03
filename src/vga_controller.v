@@ -43,7 +43,7 @@ begin
         if (vdata == (VMAX - 1)) begin
             hdata <= 0;
             vdata <= 0;
-            address <= 19'd0;
+            address <= address + 1;
         end
         else begin
             hdata <= 0;
@@ -59,7 +59,10 @@ begin
     else begin
         hdata <= hdata + 1;
         vdata <= vdata;
-        if (vdata < VSIZE && hdata + 1 < HSIZE) begin
+        if (vdata == VSIZE - 1 && hdata == HSIZE - 1) begin
+            address <= 0;
+        end
+        else if (vdata < VSIZE && hdata + 1 < HSIZE) begin
             address <= address + 1'b1;
         end
         else begin

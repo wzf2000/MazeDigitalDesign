@@ -203,9 +203,9 @@ reg signed [9:0] center_y = unit_size >> 1;
 reg signed [9:0] center_z = 48;
 reg [8:0] center_angle = 9'd180;
 localparam signed [0:359][9:0] Dir_x = {
-    10'b1000000000,
-    10'b1000000000,
-    10'b1000000000,
+    10'b1000000001,
+    10'b1000000001,
+    10'b1000000001,
     10'b1000000001,
     10'b1000000001,
     10'b1000000010,
@@ -561,8 +561,8 @@ localparam signed [0:359][9:0] Dir_x = {
     10'b1000000010,
     10'b1000000001,
     10'b1000000001,
-    10'b1000000000,
-    10'b1000000000
+    10'b1000000001,
+    10'b1000000001
 };
 localparam signed [0:359][9:0] Dir_y = {
     10'b0000000000,
@@ -833,11 +833,11 @@ localparam signed [0:359][9:0] Dir_y = {
     10'b1000000010,
     10'b1000000001,
     10'b1000000001,
-    10'b1000000000,
-    10'b1000000000,
-    10'b1000000000,
-    10'b1000000000,
-    10'b1000000000,
+    10'b1000000001,
+    10'b1000000001,
+    10'b1000000001,
+    10'b1000000001,
+    10'b1000000001,
     10'b1000000001,
     10'b1000000001,
     10'b1000000010,
@@ -1169,8 +1169,11 @@ get_min miner(
     .dir_to_light_3_z(dir_to_light[3][2])
 );
 
+reg [7:0] tmp_comp[2:0];
 localparam [0:3][2:0] light_color = {3'b111, 3'b111, 3'b111, 3'b111};
+localparam [0:3][23:0] light_color_comp = {{8'd192, 8'd128, 8'd128}, {8'd192, 8'd128, 8'd128}, {8'd192, 8'd128, 8'd128}, {8'd192, 8'd128, 8'd128}};
 reg signed [9:0] single_shade[3:0][2:0];
+reg signed [9:0] single_shade_comp[3:0][2:0];
 reg [7:0] phone[2:0];
 
 reg [7:0] red;
@@ -1411,8 +1414,8 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                         pip_en[0] <= 1'b0;
                         px[0] <= 10'd0;
                         py[0] <= height - 1;
-                        ray_dir[0] <= -200;
-                        ray_dir[1] <= -150;
+                        ray_dir[0] <= -400;
+                        ray_dir[1] <= -300;
                         ray_dir[2] <= 511;
                     end
                 end
@@ -1426,16 +1429,16 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                         pip_en[0] <= 1'b0;
                         px[0] <= 10'd0;
                         py[0] <= py[0] - 1;
-                        ray_dir[0] <= -200;
-                        ray_dir[1] <= 150 - (py[0] >> 1);
+                        ray_dir[0] <= -400;
+                        ray_dir[1] <= 301 - py[0];
                         ray_dir[2] <= 511;
                     end
                     else begin
                         pip_en[0] <= 1'b0;
                         px[0] <= px[0] + 1;
                         py[0] <= py[0];
-                        ray_dir[0] <= (px[0] >> 1) - 200;
-                        ray_dir[1] <= 150 - (py[0] >> 1);
+                        ray_dir[0] <= px[0] - 399;
+                        ray_dir[1] <= 300 - py[0];
                         ray_dir[2] <= 511;
                     end
                 end
@@ -1503,14 +1506,22 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                     integer i;
                     integer j;
                     if (rev) begin
-                        for (i = 0; i < 4; i = i + 1)
+                        for (i = 0; i < 4; i = i + 1) begin
                             for (j = 0; j < 3; j = j + 1)
                                 single_shade[i][j] <= light_color[i][j] ? -dir_to_light[i][normal_dir] : 0;
+                            {single_shade_comp[i][0], tmp_comp[0]} <= (-dir_to_light[i][normal_dir] * light_color_comp[i][23:16]);
+                            {single_shade_comp[i][1], tmp_comp[1]} <= (-dir_to_light[i][normal_dir] * light_color_comp[i][15:8]);
+                            {single_shade_comp[i][2], tmp_comp[2]} <= (-dir_to_light[i][normal_dir] * light_color_comp[i][7:0]);
+                        end
                     end
                     else begin
-                        for (i = 0; i < 4; i = i + 1)
+                        for (i = 0; i < 4; i = i + 1) begin
                             for (j = 0; j < 3; j = j + 1)
                                 single_shade[i][j] <= light_color[i][j] ? dir_to_light[i][normal_dir] : 0;
+                            {single_shade_comp[i][0], tmp_comp[0]} <= (dir_to_light[i][normal_dir] * light_color_comp[i][23:16]);
+                            {single_shade_comp[i][1], tmp_comp[1]} <= (dir_to_light[i][normal_dir] * light_color_comp[i][15:8]);
+                            {single_shade_comp[i][2], tmp_comp[2]} <= (dir_to_light[i][normal_dir] * light_color_comp[i][7:0]);
+                        end
                     end
                 end
                 else begin
@@ -1521,17 +1532,22 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                 if (pip_en[6] == 1'b0) begin
                     // do phong
                     if (~outp_en) begin
-                        phone[0] <= 8'd0;
-                        phone[1] <= 8'd0;
-                        phone[2] <= 8'd102;
+                        phone[0] <= 8'd87;
+                        phone[1] <= 8'd250;
+                        phone[2] <= 8'd255;
                     end
                     else begin
                         integer i;
                         for (i = 0; i < 3; i = i + 1)
-                            phone[i] <= ((single_shade[0][i][9] ? 0 : single_shade[0][i])
-                                       + (single_shade[1][i][9] ? 0 : single_shade[1][i])
-                                       + (single_shade[2][i][9] ? 0 : single_shade[2][i])
-                                       + (single_shade[3][i][9] ? 0 : single_shade[3][i])) >> 3;
+                            // phone[i] <= ((single_shade[0][i][9] ? 0 : single_shade[0][i])
+                            //            + (single_shade[1][i][9] ? 0 : single_shade[1][i])
+                            //            + (single_shade[2][i][9] ? 0 : single_shade[2][i])
+                            //            + (single_shade[3][i][9] ? 0 : single_shade[3][i])) >> 3;
+                            phone[i] <= ((single_shade_comp[0][i][9] ? 0 : single_shade_comp[0][i])
+                                       + (single_shade_comp[1][i][9] ? 0 : single_shade_comp[1][i])
+                                       + (single_shade_comp[2][i][9] ? 0 : single_shade_comp[2][i])
+                                       + (single_shade_comp[3][i][9] ? 0 : single_shade_comp[3][i])) >> 3;
+
                     end
                 end
                 else begin

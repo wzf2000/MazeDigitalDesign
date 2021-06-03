@@ -85,7 +85,7 @@ module get_min(
     output reg signed [9:0] dir_to_light_3_z
 );
 
-localparam [0:3][2:0][9:0] light_position = {{10'd128, 10'd0, 10'd0},{10'd128, 10'd320, 10'd0},{10'd128, 10'd0, 10'd320},{10'd128, 10'd320, 10'd320}};
+localparam [0:3][2:0][9:0] light_position = {{10'd256, 10'd0, 10'd160},{10'd256, 10'd160, 10'd0},{10'd256, 10'd160, 10'd320},{10'd256, 10'd320, 10'd160}};
 
 always @(posedge clk) begin
     if (outp_en) begin

@@ -9,6 +9,7 @@ with open("dir.v", "w") as f:
         x = x * (2 ** 9)
         x = int(round(x))
         x = min(x, 511)
+        x = max(x, -511)
         if x < 0:
             x += 1024
         if (i == 359):
@@ -24,6 +25,7 @@ with open("dir.v", "w") as f:
         x = x * (2 ** 9)
         x = int(round(x))
         x = min(x, 511)
+        x = max(x, -511)
         if x < 0:
             x += 1024
         if (i == 359):
