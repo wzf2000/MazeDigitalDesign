@@ -153,23 +153,30 @@ localparam STILL = 4'b0001;
 localparam INIT_CAM = 4'b0010;
 localparam DRAW = 4'b0011;
 
+reg[7:0] grad_cnt = 8'd0;
+reg[16:0] grad_rate = 17'd0;
+
 // define movement signal
-reg [1:0] draw_mode = 2'b00; // 01 move 10 left 11 right
-localparam MOVE = 2'b01;
-localparam LEFT = 2'b10;
-localparam RIGHT = 2'b11;
+reg [3:0] draw_mode = 4'b0000; // 01 move 10 left 11 right
+localparam MOVE = 4'b0001;
+localparam LEFT = 4'b0010;
+localparam RIGHT = 4'b0011;
+localparam DARKEN = 4'b0100;
+localparam UP = 4'b0101;
+localparam DOWN = 4'b0110;
 
 reg [8:0] pip_en; // 使能 拉低有效
 reg [9:0] px[8:0]; // 像素点x
 reg [9:0] py[8:0]; // 像素点y
 
 // LED
-assign leds[1:0] = move_data;
-assign leds[2] = wr_en;
-assign leds[15:3] = 12'd0;
-assign leds[31:16] = ~(dip_sw);
+// assign leds[1:0] = move_data;
+// assign leds[2] = wr_en;
+// assign leds[15:3] = 12'd0;
+// assign leds[31:16] = ~(dip_sw);
 
 wire signal;
+wire move_data_addtion;
 
 ps2_controller u_ps2_controller(
     .clk(clk_ps2), // 50MHz
@@ -177,10 +184,11 @@ ps2_controller u_ps2_controller(
     .ps2_clk(ps2_clock),
     .ps2_data(ps2_data),
     .data(move_data),
-    .signal(signal)
+    .signal(signal),
+    .move_data_addtion(move_data_addtion)
 );
 
-wire [1:0] move_data;
+wire [3:0] move_data;
 reg move_en = 0;
 
 reg [31:0] offset_reg = 1'b0;
@@ -1186,15 +1194,17 @@ reg [31:0] debug_4/*synthesis noprune*/;
 always @ (posedge clk_vga or posedge reset_btn) begin
     if (reset_btn) begin
         draw_mode <= RIGHT;
-        image_cnt <= 8'd89;
-        center_angle <= 9'd179;
+        image_cnt <= 8'd90;
+        center_angle <= 9'd180;
         {center_x, center_y} <= {10'd32, 10'd32};
         x <= 3'd0;
         y <= 3'd0;
-        dir <= R;
+        dir <= D;
         move_en <= 1'b1;
         state <= INIT_CAM;
+        grad_rate <= 17'd0;
         wr_en <= 1'b0;
+        center_z <= 48;
         // wr_addr <= 19'b0;
         pip_en <= 9'b111111111;
     end
@@ -1240,6 +1250,21 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                             state <= INIT_CAM;
                             image_cnt <= 8'd0;
                         end
+                        DARKEN: begin
+                            grad_rate <= 17'd0;
+                            state <= INIT_CAM;
+                            image_cnt <= 8'd0;
+                        end
+                        UP: begin
+                            draw_mode <= move_data;
+                            state <= INIT_CAM;
+                            image_cnt <= 8'd0;
+                        end
+                        DOWN: begin
+                            draw_mode <= move_data;
+                            state <= INIT_CAM;
+                            image_cnt <= 8'd0;
+                        end
                         default: state <= state;
                     endcase
                     move_en <= 1'b1;
@@ -1274,7 +1299,37 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                 pip_en <= 9'b111111111;
                 wr_addr <= 19'b0;
                 wr_en <= 1'b0;
-                if ((image_cnt == 8'd90 && (draw_mode == LEFT || draw_mode == RIGHT)) || (image_cnt == unit_size && draw_mode == MOVE)) begin
+                if (grad_rate < 17'd256) begin
+                    grad_rate <= grad_rate + 2;
+                    state <= DRAW;
+                end
+                else if (grad_rate == 17'd256) begin
+                    grad_rate <= grad_rate + 2;
+                    state <= STILL;
+                end
+                else if (draw_mode == UP) begin
+                    if (image_cnt < 8'd24) begin
+                        center_z <= center_z + 1;
+                        image_cnt <= image_cnt + 1;
+                        state <= DRAW;
+                    end
+                    else begin
+                        image_cnt <= 8'd0;
+                        state <= STILL;
+                    end
+                end
+                else if (draw_mode == DOWN) begin
+                    if (center_z != 0 && image_cnt < 8'd24) begin
+                        center_z <= center_z - 1;
+                        image_cnt <= image_cnt + 1;
+                        state <= DRAW;
+                    end
+                    else begin
+                        image_cnt <= 8'd0;
+                        state <= STILL;
+                    end
+                end
+                else if ((image_cnt == 8'd90 && (draw_mode == LEFT || draw_mode == RIGHT)) || (image_cnt == unit_size && draw_mode == MOVE)) begin
                     image_cnt <= 8'd0;
                     state <= STILL;
                     case (draw_mode)
@@ -1529,9 +1584,17 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                 if (pip_en[6] == 1'b0) begin
                     // do phong
                     if (~outp_en) begin
-                        phone[0] <= 8'd87;
-                        phone[1] <= 8'd250;
-                        phone[2] <= 8'd255;
+                        if (grad_rate < 17'd258) begin
+                            phone[0] <= (grad_rate * 16'd87) >> 8;
+                            phone[1] <= (grad_rate * 16'd250) >> 8;
+                            phone[2] <= (grad_rate * 16'd255) >> 8;
+                        end
+                        else begin
+                            phone[0] <= 8'd87;
+                            phone[1] <= 8'd250;
+                            phone[2] <= 8'd255;
+                        end
+                        
                     end
                     else begin
                         integer i;
@@ -1540,10 +1603,18 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                             //            + (single_shade[1][i][9] ? 0 : single_shade[1][i])
                             //            + (single_shade[2][i][9] ? 0 : single_shade[2][i])
                             //            + (single_shade[3][i][9] ? 0 : single_shade[3][i])) >> 3;
-                            phone[i] <= ((single_shade_comp[0][i][9] ? 0 : single_shade_comp[0][i])
+                            if (grad_rate < 17'd258) begin
+                                phone[i] <= (grad_rate * (((single_shade_comp[0][i][9] ? 0 : single_shade_comp[0][i])
+                                       + (single_shade_comp[1][i][9] ? 0 : single_shade_comp[1][i])
+                                       + (single_shade_comp[2][i][9] ? 0 : single_shade_comp[2][i])
+                                       + (single_shade_comp[3][i][9] ? 0 : single_shade_comp[3][i])) >> 3)) >> 8;
+                            end
+                            else begin
+                                phone[i] <= ((single_shade_comp[0][i][9] ? 0 : single_shade_comp[0][i])
                                        + (single_shade_comp[1][i][9] ? 0 : single_shade_comp[1][i])
                                        + (single_shade_comp[2][i][9] ? 0 : single_shade_comp[2][i])
                                        + (single_shade_comp[3][i][9] ? 0 : single_shade_comp[3][i])) >> 3;
+                            end
 
                     end
                 end

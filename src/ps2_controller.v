@@ -7,8 +7,9 @@ module ps2_controller(
     input wire rst,
     input wire ps2_clk,
     input wire ps2_data,
-    output reg [1:0] data,
-    output reg signal
+    output reg [3:0] data,
+    output reg signal,
+    output reg move_data_addtion
 );
 
 initial signal = 0;
@@ -60,7 +61,7 @@ always @(posedge clk or posedge rst) begin
     if (rst) begin
         ps2_f0 <= 1'b0;
         signal <= 0;
-        data <= 2'd0;
+        data <= 4'd0;
     end
     else if (i == 4'd10) begin
         if (tmp == 8'hf0) begin
@@ -70,28 +71,39 @@ always @(posedge clk or posedge rst) begin
         else if (!ps2_f0)
             case (tmp)
                 8'h1d: begin
-                    data <= 2'd1; // "W"
+                    data <= 4'd1; // "W"
                     signal <= 1;
+                    move_data_addtion <= 0;
                 end
                 8'h43: begin
-                    data <= 2'd1; // "I"
+                    data <= 4'd5; // "I"
                     signal <= 1;
+                    move_data_addtion <= 1;
                 end
                 8'h1c: begin
-                    data <= 2'd2; // "A"
+                    data <= 4'd2; // "A"
                     signal <= 1;
+                    move_data_addtion <= 0;
                 end
                 8'h3b: begin
-                    data <= 2'd2; // "J"
+                    data <= 4'd2; // "J"
                     signal <= 1;
+                    move_data_addtion <= 1;
                 end
                 8'h23: begin
-                    data <= 2'd3; // "D"
+                    data <= 4'd3; // "D"
                     signal <= 1;
+                    move_data_addtion <= 0;
                 end
                 8'h4b: begin
-                    data <= 2'd3; // "L"
+                    data <= 4'd4; // "L"
                     signal <= 1;
+                    move_data_addtion <= 1;
+                end
+                8'h42: begin
+                    data <= 4'd6; // "K"
+                    signal <= 1;
+                    move_data_addtion <= 1;
                 end
                 default:;
             endcase
