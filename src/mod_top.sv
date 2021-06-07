@@ -15158,7 +15158,7 @@ localparam STILL = 4'b0001;
 localparam INIT_CAM = 4'b0010;
 localparam DRAW = 4'b0011;
 
-reg [3:0] enter_state = 4'b0001;
+reg [3:0] enter_state = 4'b0100;
 localparam NONE = 4'b0000;
 localparam COVER_PHASE1 = 4'b0100;
 localparam COVER_PHASE2 = 4'b0101;
@@ -16216,7 +16216,7 @@ always @ (posedge clk_vga or posedge reset_btn) begin
         dir <= D;
         move_en <= 1'b1;
         state <= INIT_CAM;
-        enter_state <= ENTER_PHASE1;
+        enter_state <= COVER_PHASE1;
         grad_rate <= 17'd0;
         wr_en <= 1'b0;
         center_z <= 120;
@@ -16227,6 +16227,7 @@ always @ (posedge clk_vga or posedge reset_btn) begin
         case (state)
             STILL: begin
                 if (x == 4 && y == 4) begin
+                    grad_rate <= 0;
                     enter_state <= FINAL_PHASE;
                     state <= INIT_CAM;
                 end
@@ -16675,21 +16676,21 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                 if (pip_en[6] == 1'b0) begin
                     // do phong
                     if (enter_state == COVER_PHASE1 || enter_state == COVER_PHASE2 || enter_state == FINAL_PHASE) begin
-                        if (px[6] < 200 || px[6] > 599 || py[6] < 150 || py[6] > 450) begin
+                        if (px[6] < 200 || px[6] > 599 || py[6] < 150 || py[6] > 449) begin
                             phone[0] <= (grad_rate * 16'd255) >> 8;
                             phone[1] <= (grad_rate * 16'd255) >> 8;
                             phone[2] <= (grad_rate * 16'd255) >> 8;
                         end
                         else begin
                             if (enter_state == COVER_PHASE1 || enter_state == COVER_PHASE2) begin
-                                phone[0] <= (grad_rate * start_img[15'b0 + ((px[6] - 200) >> 2) + (((py[6] - 150) >> 2) * 100)][23:16]) >> 8;
-                                phone[1] <= (grad_rate * start_img[15'b0 + ((px[6] - 200) >> 2) + (((py[6] - 150) >> 2) * 100)][15:8]) >> 8;
-                                phone[2] <= (grad_rate * start_img[15'b0 + ((px[6] - 200) >> 2) + (((py[6] - 150) >> 2) * 100)][7:0]) >> 8;
+                                phone[0] <= (grad_rate * start_img[15'b0 + ((px[6] - 200) >> 2) + (((449 - py[6]) >> 2) * 100)][23:16]) >> 8;
+                                phone[1] <= (grad_rate * start_img[15'b0 + ((px[6] - 200) >> 2) + (((449 - py[6]) >> 2) * 100)][15:8]) >> 8;
+                                phone[2] <= (grad_rate * start_img[15'b0 + ((px[6] - 200) >> 2) + (((449 - py[6]) >> 2) * 100)][7:0]) >> 8;
                             end
                             else begin
-                                phone[0] <= (grad_rate * end_img[15'b0 + ((px[6] - 200) >> 2) + (((py[6] - 150) >> 2) * 100)][23:16]) >> 8;
-                                phone[1] <= (grad_rate * end_img[15'b0 + ((px[6] - 200) >> 2) + (((py[6] - 150) >> 2) * 100)][15:8]) >> 8;
-                                phone[2] <= (grad_rate * end_img[15'b0 + ((px[6] - 200) >> 2) + (((py[6] - 150) >> 2) * 100)][7:0]) >> 8;
+                                phone[0] <= (grad_rate * end_img[15'b0 + ((px[6] - 200) >> 2) + (((449 - py[6]) >> 2) * 100)][23:16]) >> 8;
+                                phone[1] <= (grad_rate * end_img[15'b0 + ((px[6] - 200) >> 2) + (((449 - py[6]) >> 2) * 100)][15:8]) >> 8;
+                                phone[2] <= (grad_rate * end_img[15'b0 + ((px[6] - 200) >> 2) + (((449 - py[6]) >> 2) * 100)][7:0]) >> 8;
                             end
                         end
                     end
