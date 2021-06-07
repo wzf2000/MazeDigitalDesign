@@ -153,6 +153,12 @@ localparam STILL = 4'b0001;
 localparam INIT_CAM = 4'b0010;
 localparam DRAW = 4'b0011;
 
+reg [3:0] enter_state = 4'b0001;
+localparam NONE = 4'b0000;
+localparam ENTER_PHASE1 = 4'b0001;
+localparam ENTER_PHASE2 = 4'b0010;
+localparam ENTER_PHASE3 = 4'b0011;
+
 reg[7:0] grad_cnt = 8'd0;
 reg[16:0] grad_rate = 17'd0;
 
@@ -204,7 +210,7 @@ wire [31:0] wr_data;
 reg [7:0] image_cnt = 8'd0;
 reg signed [9:0] center_x = unit_size >> 1;
 reg signed [9:0] center_y = unit_size >> 1;
-reg signed [9:0] center_z = 48;
+reg signed [9:0] center_z = 120;
 reg [8:0] center_angle = 9'd180;
 localparam signed [0:359][9:0] Dir_x = {
     10'b1000000001,
@@ -1202,9 +1208,10 @@ always @ (posedge clk_vga or posedge reset_btn) begin
         dir <= D;
         move_en <= 1'b1;
         state <= INIT_CAM;
+        enter_state <= ENTER_PHASE1;
         grad_rate <= 17'd0;
         wr_en <= 1'b0;
-        center_z <= 48;
+        center_z <= 120;
         // wr_addr <= 19'b0;
         pip_en <= 9'b111111111;
     end
@@ -1299,7 +1306,52 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                 pip_en <= 9'b111111111;
                 wr_addr <= 19'b0;
                 wr_en <= 1'b0;
-                if (grad_rate < 17'd256) begin
+                if (enter_state == ENTER_PHASE1) begin
+                    if (center_y < 287) begin
+                        center_y <= center_y + 1;
+                        grad_rate <= grad_rate + 1;
+                    end
+                    else begin
+                        center_y <= center_y + 1;
+                        grad_rate <= 0;
+                        center_angle <= 270;
+                        enter_state <= ENTER_PHASE2;
+                    end
+
+                    state <= DRAW;
+                end
+                else if (enter_state == ENTER_PHASE2) begin
+                    if (center_x < 287) begin
+                        center_x <= center_x + 1;
+                        grad_rate <= grad_rate + 1;
+                    end
+                    else begin
+                        center_x <= center_x + 1;
+                        grad_rate <= 0;
+                        center_x <= 32;
+                        center_y <= 32;
+                        center_angle <= 180;
+                        enter_state <= ENTER_PHASE3;
+                    end
+
+                    state <= DRAW;
+                end
+                else if (enter_state == ENTER_PHASE3) begin
+                    if (grad_rate < 258) begin
+                        grad_rate <= grad_rate + 4;
+                        state <= DRAW;
+                    end
+                    else if (center_z > 48) begin
+                        grad_rate <= 258;
+                        center_z <= center_z - 1;
+                        state <= DRAW;
+                    end
+                    else begin
+                        enter_state <= NONE;
+                        state <= STILL;
+                    end
+                end
+                else if (grad_rate < 17'd256) begin
                     grad_rate <= grad_rate + 2;
                     state <= DRAW;
                 end
@@ -1308,7 +1360,7 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                     state <= STILL;
                 end
                 else if (draw_mode == UP) begin
-                    if (image_cnt < 8'd24) begin
+                    if (center_z != 288 && image_cnt < 8'd24) begin
                         center_z <= center_z + 1;
                         image_cnt <= image_cnt + 1;
                         state <= DRAW;
@@ -1319,7 +1371,7 @@ always @ (posedge clk_vga or posedge reset_btn) begin
                     end
                 end
                 else if (draw_mode == DOWN) begin
-                    if (center_z != 0 && image_cnt < 8'd24) begin
+                    if (center_z != 24 && image_cnt < 8'd24) begin
                         center_z <= center_z - 1;
                         image_cnt <= image_cnt + 1;
                         state <= DRAW;
